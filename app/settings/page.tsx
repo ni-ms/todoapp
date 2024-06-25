@@ -5,7 +5,6 @@ const SettingsPage = () => {
     return (
         <>
             <div>SettingsPage</div>
-            <Link href="/">Home</Link>
         </>
     )
 }
