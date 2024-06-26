@@ -8,7 +8,7 @@ Functions to be used in the main.rs file
 1. Create_todo_list
 2. Create_todo_item
 3. Create_step_item
-4. Get all data
+4. Get all data ( sorted according to date and priority )
 */
 
 pub fn create_todo_list(

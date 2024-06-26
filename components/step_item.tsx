@@ -7,14 +7,14 @@ interface Step {
 }
 const StepItem = ({steps}: {steps: Step[]}) => {
     return (
-        <div>
+        <ul className="pl-5 list-disc">
             {steps.map(step => (
-                <div key={step.id}>
+                <li key={step.id}>
                     <h4>{step.title}</h4>
                     <p>{step.status}</p>
-                </div>
+                </li>
             ))}
-        </div>
+        </ul>
     )
 }
 export default StepItem
