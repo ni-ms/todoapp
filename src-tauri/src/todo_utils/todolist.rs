@@ -12,7 +12,7 @@ pub struct TodoList {
     pub items: Vec<TodoItem>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Eq, Hash, PartialEq)]
 pub enum Day {
     Monday,
     Tuesday,

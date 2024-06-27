@@ -11,6 +11,37 @@ Functions to be used in the main.rs file
 4. Get all data ( sorted according to date and priority )
 */
 
+pub mod week {
+    use std::collections::HashMap;
+    use crate::todo_utils::todolist::{Day, TodoList};
+
+    pub struct Week {
+        days: HashMap<Day, Vec<TodoList>>,
+    }
+
+    impl Week {
+        pub fn new() -> Self {
+            let days = HashMap::new();
+            Self { days }
+        }
+
+        pub fn add_todo_list(&mut self, day: Day, todo_list: TodoList) {
+            let entry = self.days.entry(day).or_insert_with(Vec::new);
+            entry.push(todo_list);
+        }
+
+        pub fn get_todo_lists(&self, day: Day) -> Option<&Vec<TodoList>> {
+            self.days.get(&day)
+        }
+
+        pub fn remove_todo_list(&mut self, day: Day, id: i32) {
+            if let Some(todo_lists) = self.days.get_mut(&day) {
+                todo_lists.retain(|todo_list| todo_list.id != id);
+            }
+        }
+    }
+}
+
 pub fn create_todo_list(
     id: i32,
     title: String,

@@ -1,6 +1,7 @@
 'use client'
 import TodoContainer, {Todo} from "@/components/todo_container";
 import {useState} from "react";
+import Toolbar from "@/components/toolbar";
 
 const test_todo = [
     {
@@ -47,6 +48,7 @@ export default function Home() {
 
     return (
         <main>
+            <Toolbar />
             <TodoContainer
                 day="Monday"
                 todos={todos}
