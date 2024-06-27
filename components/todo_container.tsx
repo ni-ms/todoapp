@@ -1,5 +1,5 @@
-"use client";
-import React, { useState } from 'react'
+'use client'
+import React, {useState} from 'react'
 import StepItem from './step_item';
 
 interface Step {
@@ -8,7 +8,7 @@ interface Step {
     status: 'Todo' | 'Doing' | 'Done';
 }
 
-interface Todo {
+export interface Todo {
     id: number;
     title: string;
     description: string | null;
@@ -23,11 +23,29 @@ interface TodoContainerProps {
     todos: Todo[];
 }
 
-const TodoContainer = ({day, todos}: TodoContainerProps) => {
+const TodoContainer = ({day, todos, onSaveTodo, onDeleteTodo}: TodoContainerProps & {onSaveTodo: (id: number, newTodo: Todo) => void, onDeleteTodo: (id: number) => void}) => {
+
     const [editing, setEditing] = useState<number | null>(null);
 
+    const [title, setTitle] = useState<string>("");
+    const [priority, setPriority] = useState<number | null>(null);
+    const [description, setDescription] = useState<string | null>("");
+    const [tags, setTags] = useState<string[] | null>(null);
+    const [status, setStatus] = useState<'Todo' | 'Doing' | 'Done'>('Todo');
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, setState: React.Dispatch<React.SetStateAction<any>>) => {
+        setState(event.target.value);
+    }
     const handleEditClick = (id: number) => {
-        setEditing(id);
+        const todo = todos.find(todo => todo.id === id);
+        if (todo) {
+            setTitle(todo.title);
+            setPriority(todo.priority);
+            setDescription(todo.description);
+            setTags(todo.tags);
+            setStatus(todo.status);
+            setEditing(id);
+        }
     }
 
     const handleCancelClick = () => {
@@ -35,12 +53,21 @@ const TodoContainer = ({day, todos}: TodoContainerProps) => {
     }
 
     const handleSaveClick = (id: number) => {
-        // Save logic here
+        const newTodo: Todo = {
+            id,
+            title,
+            description,
+            priority,
+            steps: null, // Update this as needed
+            tags,
+            status,
+        };
+        onSaveTodo(id, newTodo);
         setEditing(null);
     }
 
     const handleDeleteClick = (id: number) => {
-        // Delete logic here
+        onDeleteTodo(id);
         setEditing(null);
     }
 
@@ -50,31 +77,77 @@ const TodoContainer = ({day, todos}: TodoContainerProps) => {
             <div>
                 {todos.map(todo => (
                     <div key={todo.id} className="mb-4 bg-gray-600 rounded-lg p-2">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-bold text-lg">{todo.title}</h3>
-                            {editing === todo.id ? (
-                                <>
-                                    <button onClick={handleCancelClick} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                        Cancel
-                                    </button>
-                                    <button onClick={() => handleSaveClick(todo.id)} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                        Save
-                                    </button>
-                                    <button onClick={() => handleDeleteClick(todo.id)} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                                        Delete
-                                    </button>
-                                </>
-                            ) : (
-                                <button onClick={() => handleEditClick(todo.id)} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    Edit
+                        {editing === todo.id ? (
+                            <>
+                                <label className="block text-gray-700 text-sm font-bold mb-2"
+                                       htmlFor="title">Title:</label>
+                                <input
+                                    id="title"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    type="text" value={title} onChange={(e) => handleInputChange(e, setTitle)}/>
+
+                                <label className="block text-gray-700 text-sm font-bold mb-2"
+                                       htmlFor="priority">Priority:</label>
+                                <input
+                                    id="priority"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    type="number" value={priority || ""}
+                                    onChange={(e) => handleInputChange(e, setPriority)}/>
+
+                                <label className="block text-gray-700 text-sm font-bold mb-2"
+                                       htmlFor="description">Description:</label>
+                                <input
+                                    id="description"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    type="text" value={description || ""}
+                                    onChange={(e) => handleInputChange(e, setDescription)}/>
+
+                                <label className="block text-gray-700 text-sm font-bold mb-2"
+                                       htmlFor="tags">Tags:</label>
+                                <input
+                                    id="tags"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    type="text" value={tags?.join(", ") || ""}
+                                    onChange={(e) => handleInputChange(e, setTags)}/>
+
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="status">Status:</label>
+                                <select
+                                    id="status"
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={status} onChange={(e) => handleInputChange(e, setStatus)}>
+                                    <option value="Todo">Todo</option>
+                                    <option value="Doing">Doing</option>
+                                    <option value="Done">Done</option>
+                                </select>
+                                <button
+                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
+                                    onClick={handleCancelClick}>Cancel
                                 </button>
-                            )}
-                        </div>
-                        <p className="mb-2">{todo.description}</p>
-                        <p className="mb-2">{todo.priority}</p>
-                        <p className="mb-2">{todo.tags}</p>
-                        <p className="mb-2">{todo.status}</p>
-                        {todo.steps && <StepItem steps={todo.steps}/>}
+                                <button
+                                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2"
+                                    onClick={() => handleSaveClick(todo.id)}>Save
+                                </button>
+                                <button
+                                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-2"
+                                    onClick={() => handleDeleteClick(todo.id)}>Delete
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => handleEditClick(todo.id)}>Edit
+                                </button>
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold text-lg">{todo.title}</h3>
+                                </div>
+                                <h4 className="mb-2">Priority: {todo.priority}</h4>
+                                <p className="mb-2">{todo.description}</p>
+                                <p className="mb-2">Tags: {todo.tags}</p>
+                                <p className="mb-2">Status: {todo.status}</p>
+                                {todo.steps && <StepItem steps={todo.steps}/>}
+                            </>
+                        )}
+
                     </div>
                 ))}
             </div>

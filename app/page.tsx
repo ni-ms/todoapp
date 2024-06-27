@@ -1,4 +1,6 @@
-import TodoContainer from "@/components/todo_container";
+'use client'
+import TodoContainer, {Todo} from "@/components/todo_container";
+import {useState} from "react";
 
 const test_todo = [
     {
@@ -33,9 +35,24 @@ const test_todo = [
     }
 ];
 export default function Home() {
+    const [todos, setTodos] = useState<Todo[]>(test_todo);
+
+    const handleSaveTodo = (id: number, newTodo: Todo) => {
+        setTodos(todos.map((todo) => todo.id === id ? newTodo : todo));
+    }
+
+    const handleDeleteTodo = (id: number) => {
+        setTodos(todos.filter((todo: { id: number; }) => todo.id !== id));
+    }
+
     return (
         <main>
-            <TodoContainer day="Monday" todos={test_todo}/>
+            <TodoContainer
+                day="Monday"
+                todos={todos}
+                onSaveTodo={handleSaveTodo}
+                onDeleteTodo={handleDeleteTodo}
+            />
         </main>
     );
 }
