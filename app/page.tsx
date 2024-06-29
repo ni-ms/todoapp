@@ -48,7 +48,11 @@ export default function Home() {
 
     return (
         <main>
-            <Toolbar />
+            <Toolbar
+                onFilter={() => console.log("Filter clicked")}
+                onSearch={() => console.log("Search clicked")}
+                onNewTodo={() => console.log("New Todo clicked")}
+            />
             <TodoContainer
                 day="Monday"
                 todos={todos}

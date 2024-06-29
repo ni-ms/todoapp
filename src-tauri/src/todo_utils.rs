@@ -1,3 +1,7 @@
+use crate::todo_utils::todolist::{Day, TodoList};
+use crate::todo_utils::week::Week;
+use std::collections::HashMap;
+
 pub mod stepitem;
 pub mod todoitem;
 pub mod todolist;
@@ -12,8 +16,8 @@ Functions to be used in the main.rs file
 */
 
 pub mod week {
-    use std::collections::HashMap;
     use crate::todo_utils::todolist::{Day, TodoList};
+    use std::collections::HashMap;
 
     pub struct Week {
         days: HashMap<Day, Vec<TodoList>>,
@@ -23,6 +27,25 @@ pub mod week {
         pub fn new() -> Self {
             let days = HashMap::new();
             Self { days }
+        }
+
+        pub fn initialize_week() -> HashMap<Day, Vec<TodoList>> {
+            let mut week = HashMap::new();
+            week.insert(Day::Monday, Vec::new());
+            week.insert(Day::Tuesday, Vec::new());
+            week.insert(Day::Wednesday, Vec::new());
+            week.insert(Day::Thursday, Vec::new());
+            week.insert(Day::Friday, Vec::new());
+            week.insert(Day::Saturday, Vec::new());
+            week.insert(Day::Sunday, Vec::new());
+            week
+        }
+        pub fn initialize_week_days(days: Vec<Day>) -> HashMap<Day, Vec<TodoList>> {
+            let mut week = HashMap::new();
+            for day in days {
+                week.insert(day, Vec::new());
+            }
+            week
         }
 
         pub fn add_todo_list(&mut self, day: Day, todo_list: TodoList) {
@@ -46,14 +69,18 @@ pub fn create_todo_list(
     id: i32,
     title: String,
     date: String,
-    day: todolist::Day,
+    day: Day,
     last_save_time_stamp: Option<String>,
     items: Vec<todoitem::TodoItem>,
-) -> todolist::TodoList {
-    todolist::TodoList::create(id, title, date, day, last_save_time_stamp, items)
+) -> TodoList {
+    TodoList::create(id, title, date, day, last_save_time_stamp, items)
 }
 
-pub fn print_todo_list(todo_list: &todolist::TodoList) {
+pub fn use_create_todo_list_n_days(days: Vec<Day>) -> HashMap<Day, Vec<TodoList>> {
+    Week::initialize_week_days(days)
+}
+
+pub fn print_todo_list(todo_list: &TodoList) {
     println!("TodoList id: {}", todo_list.id);
     println!("Title: {}", todo_list.title);
     println!("Date: {}", todo_list.date);
@@ -106,14 +133,11 @@ pub fn add_step_to_todo_item(todo_item: &mut todoitem::TodoItem, step: stepitem:
     todo_item.steps = Some(steps);
 }
 
-pub fn add_todo_item_to_todo_list(
-    todo_list: &mut todolist::TodoList,
-    todo_item: todoitem::TodoItem,
-) {
+pub fn add_todo_item_to_todo_list(todo_list: &mut TodoList, todo_item: todoitem::TodoItem) {
     todo_list.items.push(todo_item);
 }
 
-pub fn get_todo_item(todo_list: &todolist::TodoList, id: i32) -> Option<&todoitem::TodoItem> {
+pub fn get_todo_item(todo_list: &TodoList, id: i32) -> Option<&todoitem::TodoItem> {
     for item in &todo_list.items {
         if item.id == id {
             return Some(item);
@@ -134,7 +158,7 @@ pub fn get_step_from_todo_item(
     None
 }
 
-pub fn delete_todo_item_from_todo_list(todo_list: &mut todolist::TodoList, id: i32) {
+pub fn delete_todo_item_from_todo_list(todo_list: &mut TodoList, id: i32) {
     let mut index = 0;
     for (i, item) in todo_list.items.iter().enumerate() {
         if item.id == id {
@@ -168,7 +192,7 @@ mod tests {
             1,
             "Test".to_string(),
             "2022-01-01".to_string(),
-            todolist::Day::Monday,
+            Day::Monday,
             Some("2022-01-01T00:00:00Z".to_string()),
             vec![],
         );
