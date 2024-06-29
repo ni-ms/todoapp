@@ -2,7 +2,7 @@ use super::todoitem::TodoItem;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 
-#[derive(Builder, Serialize, Deserialize)]
+#[derive(Builder, Serialize, Deserialize, Debug, Eq, Hash, PartialEq, Clone)]
 pub struct TodoList {
     pub id: i32,
     pub title: String,

@@ -1,7 +1,8 @@
 use super::stepitem::StepItem;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Builder, Serialize, Deserialize)]
+
+#[derive(Clone, Builder, Serialize, Deserialize, Debug, Eq, Hash, PartialEq)]
 pub struct TodoItem {
     pub id: i32,
     pub title: String,
@@ -12,7 +13,7 @@ pub struct TodoItem {
     pub status: Status,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Eq, Hash, PartialEq)]
 pub enum Status {
     Todo,
     Doing,

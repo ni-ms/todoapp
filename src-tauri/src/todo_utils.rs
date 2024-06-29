@@ -257,4 +257,47 @@ mod tests {
 
         print_todo_list(&todo_list);
     }
+
+    #[test]
+    fn create_and_modify_weekly_todo() {
+        // Create a new Week
+        let mut week = Week::new();
+
+        // Create a new TodoList
+        let mut todo_list = create_todo_list(
+            1,
+            "Test".to_string(),
+            "2022-01-01".to_string(),
+            Day::Monday,
+            Some("2022-01-01T00:00:00Z".to_string()),
+            vec![],
+        );
+
+        // Create a new TodoItem
+        let mut todo_item1 = create_todo_item(
+            1,
+            "Test 1".to_string(),
+            Some("Description".to_string()),
+            Some(1),
+            None,
+            None,
+            todoitem::Status::Todo,
+        );
+
+        // Add the TodoItem to the TodoList
+        add_todo_item_to_todo_list(&mut todo_list, todo_item1.clone());
+
+        // Add the TodoList to the Week on Monday
+        week.add_todo_list(Day::Monday, todo_list.clone());
+
+        // Check if the TodoList was added correctly
+        let todo_lists = week.get_todo_lists(Day::Monday).unwrap();
+        assert_eq!(todo_lists.len(), 1);
+        assert_eq!(todo_lists[0], todo_list);
+
+        // Check if the TodoItem was added correctly
+        let todo_items = &todo_lists[0].items;
+        assert_eq!(todo_items.len(), 1);
+        assert_eq!(todo_items[0], todo_item1);
+    }
 }
