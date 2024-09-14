@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod todo_utils;
+mod todo_service;
 
 fn main() {
     tauri::Builder::default()
