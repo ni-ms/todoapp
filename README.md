@@ -12,3 +12,9 @@ I think I messed up the postcss vite sass configuration. I will try to fix it la
 
 # Now, I'm using Tauri + next js + tailwindcss
 Svelte or tauri had issues with tailwindcss and postcss. Tried to fix it but couldn't. So, I switched to next js.
+
+
+# Features to add
+- Add reminder and expected finish date for each task
+- add step item and sub task
+- add importance and urgency for each task
