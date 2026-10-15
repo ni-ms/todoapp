@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import { BrowserSpeechSettings } from "./browser-speech-settings";
 import { Input } from "./ui/input";
 import {
   aiSettings,
@@ -112,8 +113,7 @@ export function BrowserAISettings() {
                 <p className="text-xs">
                   Ollama:{" "}
                   {status.ollamaAvailable ? "connected" : "not connected"} ·
-                  Whisper:{" "}
-                  {status.whisperAvailable ? "connected" : "not connected"}
+                  Voice uses the browser speech model below
                 </p>
               )}
               <label className="block space-y-2 text-xs">
@@ -139,10 +139,11 @@ export function BrowserAISettings() {
           {settings.provider === "browser" && (
             <>
               <p className="text-xs text-muted-foreground">
-                Qwen 2.5 1.5B runs on this device using WebGPU. Loading downloads
-                model files from the model host and caches them in your browser
-                (around 1 GB). Requests and excerpts stay on this device.
-                Requires enough GPU memory; smaller models can make mistakes.
+                Qwen 2.5 1.5B runs on this device using WebGPU. Loading
+                downloads model files from the model host and caches them in
+                your browser (around 1 GB). Requests and excerpts stay on this
+                device. Requires enough GPU memory; smaller models can make
+                mistakes.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -270,9 +271,10 @@ export function BrowserAISettings() {
       ) : (
         <p className="text-xs">Loading AI settings…</p>
       )}
+      <BrowserSpeechSettings />
       <details className="rounded-lg border p-3 text-xs leading-relaxed">
         <summary className="cursor-pointer font-medium">
-          Local server and voice setup
+          Local Ollama setup
         </summary>
         <p className="mt-3">
           For Ollama, allow only this website’s origin in OLLAMA_ORIGINS and
@@ -285,14 +287,6 @@ export function BrowserAISettings() {
             {typeof window !== "undefined" ? window.location.origin : ""}
           </code>
           . Do not use a wildcard origin.
-        </p>
-        <p className="mt-2">
-          Recording uses your local whisper.cpp server at
-          127.0.0.1:8080/inference for every text-provider choice. Enable CORS
-          for this origin on that server. Allow microphone and local-network
-          access when your browser asks. If your browser blocks local HTTP
-          access from this HTTPS site, use a supported browser or type your
-          request. Browsers cannot bypass these restrictions.
         </p>
       </details>
       {busy && (

@@ -19,6 +19,7 @@ import {
   readContextFiles,
   aiSettings,
 } from "@/lib/ai";
+import { speechModelReady } from "@/lib/speech";
 import { recordingWav } from "@/lib/audio";
 interface ContextItem {
   id: string;
@@ -55,7 +56,9 @@ export function TaskCapture({
     [error, setError] = useState(""),
     [hint, setHint] = useState(""),
     [hosted, setHosted] = useState(false);
-  const recorder = useRef<MediaRecorder | null>(null),
+  const openingMicrophone = useRef(false),
+    transcription = useRef<AbortController | null>(null),
+    recorder = useRef<MediaRecorder | null>(null),
     stream = useRef<MediaStream | null>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     mounted = useRef(true),
@@ -75,6 +78,7 @@ export function TaskCapture({
     mounted.current = true;
     return () => {
       mounted.current = false;
+      transcription.current?.abort();
       if (timer.current) clearTimeout(timer.current);
       if (recorder.current?.state === "recording") recorder.current.stop();
       stream.current?.getTracks().forEach((t) => t.stop());
@@ -114,6 +118,9 @@ export function TaskCapture({
       recorder.current?.stop();
       return;
     }
+    if (openingMicrophone.current) return;
+    openingMicrophone.current = true;
+    setBusy(true);
     setError("");
     setHint("");
     try {
@@ -123,6 +130,10 @@ export function TaskCapture({
       )
         throw new Error(
           "Microphone capture is unavailable in this runtime. You can type your request.",
+        );
+      if (!isDesktop() && !speechModelReady())
+        throw new Error(
+          "Download / load the speech model in AI setup before recording. No local server is needed.",
         );
       const media = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (!mounted.current) {
@@ -142,12 +153,21 @@ export function TaskCapture({
         if (!mounted.current) return;
         setRecording(false);
         setBusy(true);
+        setHint(
+          isDesktop()
+            ? "Transcribing with local Whisper…"
+            : "Transcribing on this device…",
+        );
         try {
           const audio = await recordingWav(
             new Blob(chunks, { type: capture.mimeType }),
           );
           if (!mounted.current) return;
-          const transcript = await transcribeAudio(audio);
+          transcription.current = new AbortController();
+          const transcript = await transcribeAudio(
+            audio,
+            transcription.current.signal,
+          );
           if (mounted.current) {
             setText((previous) =>
               [previous, transcript].filter(Boolean).join("\n"),
@@ -156,7 +176,10 @@ export function TaskCapture({
             setHint("Transcript ready. Edit it, then create task drafts.");
           }
         } catch (e) {
-          if (mounted.current) setError(String(e));
+          if (mounted.current) {
+            setError(String(e));
+            setHint("");
+          }
         } finally {
           if (mounted.current) setBusy(false);
         }
@@ -174,6 +197,9 @@ export function TaskCapture({
     } catch (e) {
       stream.current?.getTracks().forEach((t) => t.stop());
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      openingMicrophone.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
   async function generate() {
@@ -332,13 +358,17 @@ export function TaskCapture({
           onClick={generate}
         >
           <Sparkles />
-          {busy ? "Creating drafts…" : "Create task drafts"}
+          {busy ? "Working…" : "Create task drafts"}
         </Button>
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         {recording
-          ? "Recording… Stops after 90 seconds. Audio goes only to your local Whisper server."
-          : "Review AI setup to choose where requests are processed. Recording always uses your local Whisper server. Review drafts before adding them."}
+          ? isDesktop()
+            ? "Recording… Stops after 90 seconds. Audio goes only to your local Whisper server."
+            : "Recording… Stops after 90 seconds. Audio stays on this device and is transcribed in your browser."
+          : isDesktop()
+            ? "Review AI setup to choose where requests are processed. Recording uses your local Whisper server. Review drafts before adding them."
+            : "Voice is transcribed on this device. Load the speech model in AI setup first. Review the transcript before creating task drafts."}
       </p>
       {contexts.length > 0 && (
         <details className="mt-4 rounded-lg border p-3 text-xs">

@@ -60,8 +60,6 @@ export async function modelDocument(
     "http://127.0.0.1:11434/api/tags",
     "http://127.0.0.1:11434/api/show",
     "http://127.0.0.1:11434/api/chat",
-    "http://127.0.0.1:8080/",
-    "http://127.0.0.1:8080/inference",
     "https://openrouter.ai/api/v1/chat/completions",
   ];
   if (!allowed.includes(url)) throw new Error("Unsupported model endpoint.");
@@ -113,15 +111,8 @@ export async function modelDocument(
 }
 export async function localAIStatus(): Promise<LocalAIStatus> {
   if (isDesktop()) return invoke("local_ai_status");
-  const [ollama, whisper, config] = await Promise.all([
+  const [ollama, config] = await Promise.all([
     modelDocument("http://127.0.0.1:11434/api/tags", {}, 3).catch(() => null),
-    fetch("http://127.0.0.1:8080/", {
-      credentials: "omit",
-      redirect: "error",
-      signal: AbortSignal.timeout(3000),
-    })
-      .then((r) => r.ok)
-      .catch(() => false),
     aiSettings(),
   ]);
   const entries = ollama?.models;
@@ -135,7 +126,7 @@ export async function localAIStatus(): Promise<LocalAIStatus> {
       : [],
     model: config.model,
     ollamaAvailable: Boolean(ollama),
-    whisperAvailable: whisper,
+    whisperAvailable: false,
   };
 }
 let worker: Worker | undefined;
@@ -363,25 +354,13 @@ export async function extractTasks(
     generating = false;
   }
 }
-export async function transcribeAudio(audio: string): Promise<string> {
+export async function transcribeAudio(
+  audio: string,
+  signal?: AbortSignal,
+): Promise<string> {
   if (isDesktop()) return invoke("transcribe_audio", { audio });
-  if (audio.length > 6_000_000)
-    throw new Error("Keep recordings under 90 seconds.");
-  const bytes = Uint8Array.from(atob(audio), (c) => c.charCodeAt(0));
-  const body = new FormData();
-  body.append("file", new Blob([bytes], { type: "audio/wav" }), "capture.wav");
-  body.append("response_format", "json");
-  const result = await modelDocument("http://127.0.0.1:8080/inference", {
-    method: "POST",
-    body,
-  });
-  if (
-    typeof result.text !== "string" ||
-    !result.text.trim() ||
-    result.text.length > 12000
-  )
-    throw new Error("Whisper returned no valid transcript.");
-  return result.text.trim();
+  const { transcribeBrowserAudio } = await import("./speech");
+  return transcribeBrowserAudio(audio, signal);
 }
 export async function readContextFiles(
   files: File[],

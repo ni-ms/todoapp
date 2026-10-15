@@ -40,7 +40,7 @@ Open http://127.0.0.1:3000. **Browser preview stores its data separately in Inde
 
 ## GitHub Pages browser preview
 
-The app can be hosted as a static website: Next.js exports HTML, CSS, and JavaScript to `out/`. No backend or Rust/WASM build is needed for the existing browser preview. Tasks, tags, areas, and calendar events persist locally in each visitor's browser; hosting does not upload their workspace or share it across devices. The browser has its own deterministic weekly planner, local Ollama/Whisper adapters, optional WebLLM in-browser task generation, optional OpenRouter hosted task generation, Google web sign-in/publishing/Drive backup, and folder backup in supported browsers. See [browser setup and limits](docs/browser.md). Browser voice still requires a local Whisper server; it is not an in-browser speech model.
+The app can be hosted as a static website: Next.js exports HTML, CSS, and JavaScript to `out/`. No backend or Rust/WASM build is needed for the existing browser preview. Tasks, tags, areas, and calendar events persist locally in each visitor's browser; hosting does not upload their workspace or share it across devices. The browser has its own deterministic weekly planner, a local Ollama adapter and on-device speech, optional WebLLM in-browser task generation, optional OpenRouter hosted task generation, Google web sign-in/publishing/Drive backup, and folder backup in supported browsers. See [browser setup and limits](docs/browser.md). Browser voice uses a separately loaded on-device Whisper Tiny model with WebAssembly; no local speech server is required.
 
 To publish:
 
