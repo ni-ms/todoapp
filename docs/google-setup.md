@@ -2,6 +2,8 @@
 
 Daymark works offline without an account. Its optional desktop connection publishes events and open task deadlines to a dedicated **Daymark** Google Calendar and saves a workspace backup in Google Drive's private application folder. Automatic sync runs about once a minute while the app is open. It does not run after quitting the app.
 
+The browser app has a separate Google Web OAuth client flow and stores only short-lived access in tab memory. It can publish to its own calendar and back up to Drive without a server, but needs user-driven sign-in after reload/expiry. See [browser Google setup](browser.md#google-in-the-browser); the Desktop client setup below is not interchangeable with it.
+
 ## One-time development setup
 
 A Google sign-in button needs an OAuth client identifying this app. For this development build:

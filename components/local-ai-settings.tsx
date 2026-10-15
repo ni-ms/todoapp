@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { isDesktop } from "@/lib/storage";
+import { BrowserAISettings } from "./browser-ai-settings";
 export interface LocalAIStatus {
   models: string[];
   model: string;
@@ -10,6 +11,9 @@ export interface LocalAIStatus {
   whisperAvailable: boolean;
 }
 export function LocalAISettings() {
+  return isDesktop() ? <NativeAISettings /> : <BrowserAISettings />;
+}
+function NativeAISettings() {
   const [status, setStatus] = useState<LocalAIStatus | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);

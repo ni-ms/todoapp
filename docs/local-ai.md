@@ -1,6 +1,8 @@
 # Local task capture and planning
 
-Daymark can run task capture entirely on this Mac: **Whisper → editable transcript → Ollama → editable task drafts → save**. It never sends audio or selected file excerpts to a hosted AI service. Inference uses fixed loopback addresses, ignores proxy environment variables, rejects redirects, and rejects Ollama cloud aliases/remote model metadata. Ollama cloud features should also be disabled at the runtime level.
+The desktop app can run task capture entirely on this Mac: **Whisper → editable transcript → Ollama → editable task drafts → save**. It never sends audio or selected file excerpts to a hosted AI service. Inference uses fixed loopback addresses, ignores proxy environment variables, rejects redirects, and rejects Ollama cloud aliases/remote model metadata. Ollama cloud features should also be disabled at the runtime level.
+
+Browser capture also supports local Ollama/Whisper, an optional in-browser WebLLM text model, and opt-in OpenRouter hosted text models with a user-owned key. The browser sends text/excerpts to a hosted provider only when that provider is selected and drafts are requested. See [browser setup, scheduling, and limits](browser.md). The native setup below remains local-only.
 
 ## Installed on this Mac
 

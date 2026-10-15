@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fullcalendar/react": "^7.1.2",
+    "@mlc-ai/web-llm": "^0.2.86",
     "@tauri-apps/api": "^2.12.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.1",
+    "fake-indexeddb": "^6.2.5",
     "postcss": "^8",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",

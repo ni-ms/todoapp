@@ -1,6 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useRef, useState } from "react";
+import {
+  previewPlan,
+  applyPlan,
+  undoPlan,
+  planUndoAvailable,
+  type Proposal,
+} from "@/lib/planning";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,23 +16,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { isDesktop } from "@/lib/storage";
-import {
-  duration,
-  localDate,
-  type Workspace,
-  type EventInput,
-} from "@/lib/domain";
-interface Proposal {
-  id: string;
-  events: EventInput[];
-  unscheduled: { title: string; minutes: number; reason: string }[];
-}
+import { duration, localDate, type Workspace } from "@/lib/domain";
 export function Planner({
   onApply,
 }: {
   onApply: (w: Workspace, notice: string) => void;
 }) {
+  const trigger = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -37,9 +33,8 @@ export function Planner({
     [weekends, setWeekends] = useState(false),
     [undoable, setUndoable] = useState(false);
   useEffect(() => {
-    if (!isDesktop()) return;
     let active = true;
-    invoke<boolean>("plan_undo_available")
+    planUndoAvailable()
       .then((value) => {
         if (active) setUndoable(value);
       })
@@ -54,15 +49,13 @@ export function Planner({
     setProposal(null);
     try {
       setProposal(
-        await invoke<Proposal>("preview_plan", {
-          options: {
-            startDate: localDate(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            startHour: start,
-            endHour: end,
-            weekends,
-            breakMinutes: breaks,
-          },
+        await previewPlan({
+          startDate: localDate(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          startHour: start,
+          endHour: end,
+          weekends,
+          breakMinutes: breaks,
         }),
       );
     } catch (e) {
@@ -76,8 +69,9 @@ export function Planner({
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Button
           variant="outline"
-          disabled={!isDesktop()}
-          onClick={() => {
+          disabled={busy}
+          onClick={(event) => {
+            trigger.current = event.currentTarget;
             setOpen(true);
             setProposal(null);
             setError("");
@@ -93,12 +87,13 @@ export function Planner({
             variant="ghost"
             size="sm"
             disabled={busy}
-            onClick={async () => {
+            onClick={async (event) => {
+              trigger.current = event.currentTarget;
               setBusy(true);
               setError("");
               try {
                 onApply(
-                  await invoke<Workspace>("undo_plan"),
+                  await undoPlan(),
                   "Plan undone. Sessions moved to Trash.",
                 );
                 setUndoable(false);
@@ -123,13 +118,17 @@ export function Planner({
         <DialogContent
           className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"
           showCloseButton={!busy}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            trigger.current?.focus();
+          }}
         >
           <DialogHeader>
             <DialogTitle>Plan my week</DialogTitle>
             <DialogDescription>
-              Preview sessions across all areas for the next seven days. Existing events stay
-              fixed. Tasks are planned by deadline, then priority, in blocks up
-              to 90 minutes.
+              Preview sessions across all areas for the next seven days.
+              Existing events stay fixed. Tasks are planned by deadline, then
+              priority, in blocks up to 90 minutes.
             </DialogDescription>
           </DialogHeader>
           <fieldset disabled={busy} className="grid grid-cols-3 gap-3">
@@ -272,7 +271,7 @@ export function Planner({
                 setError("");
                 try {
                   onApply(
-                    await invoke<Workspace>("apply_plan", { id: proposal.id }),
+                    await applyPlan(proposal.id),
                     "Study sessions added to your calendar.",
                   );
                   setUndoable(true);

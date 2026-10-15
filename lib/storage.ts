@@ -53,7 +53,7 @@ const native: WorkspaceStorage = {
 
 // A separate, clearly labelled browser preview. It never substitutes for failed native storage.
 let browserDatabase: Promise<IDBDatabase> | undefined;
-function openPreview() {
+export function openPreview() {
   if (!browserDatabase)
     browserDatabase = new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("daymark-browser-preview", 1);
@@ -81,17 +81,21 @@ function openPreview() {
     });
   return browserDatabase;
 }
-async function previewTransaction(
-  mutate?: (workspace: Workspace) => void,
+export interface BrowserPlanMetadata {
+  lastPlan?: { id: string; revision: string }[];
+}
+export async function previewTransaction(
+  mutate?: (workspace: Workspace, metadata: BrowserPlanMetadata) => void,
 ): Promise<Workspace> {
   const database = await openPreview();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction("workspace", "readwrite");
     const store = transaction.objectStore("workspace");
     const request = store.get("current");
+    const metadataRequest = store.get("planner");
     let workspace: Workspace;
     let reason: unknown;
-    request.onsuccess = () => {
+    metadataRequest.onsuccess = () => {
       try {
         workspace = request.result ?? emptyWorkspace();
         if (
@@ -108,9 +112,11 @@ async function previewTransaction(
         );
         unifyTags(workspace);
         workspace.areas ??= workspace.tags.filter((t) => !t.deletedAt).map((t) => ({ id: "area-" + t.id, name: t.name, color: t.color, icon: t.icon, tagIds: [t.id], createdAt: t.createdAt, updatedAt: t.updatedAt, deletedAt: null }));
-        mutate?.(workspace);
+        const metadata: BrowserPlanMetadata = metadataRequest.result ?? {};
+        mutate?.(workspace, metadata);
         unifyTags(workspace);
         store.put(workspace, "current");
+        store.put(metadata, "planner");
       } catch (error) {
         reason = error;
         transaction.abort();

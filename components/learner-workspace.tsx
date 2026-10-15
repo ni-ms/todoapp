@@ -34,6 +34,7 @@ import { TrashView } from "@/components/trash-view";
 import { TaskCapture } from "@/components/task-capture";
 import { AreaManager } from "@/components/area-manager";
 import { areaTagIds, taskInArea, eventInArea } from "@/lib/areas";
+import { BrowserServices } from "./browser-services";
 import { Planner } from "@/components/planner";
 import { storage, isDesktop } from "@/lib/storage";
 import { exportCalendar } from "@/lib/ical";
@@ -239,6 +240,7 @@ export default function LearnerWorkspace({
   };
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_minmax(0,1fr)]">
+      <BrowserServices />
       <a
         href="#main"
         className="sr-only z-50 rounded bg-card p-3 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isDesktop } from "@/lib/storage";
+import { BrowserGoogleConnection } from "./browser-google-connection";
 interface GoogleStatus {
   configured: boolean;
   connected: boolean;
@@ -18,7 +19,7 @@ interface GoogleStatus {
   lastSync: string | null;
   error: string | null;
 }
-export function GoogleConnection({
+function NativeGoogleConnection({
   onError,
 }: {
   onError: (message: string) => void;
@@ -177,4 +178,8 @@ export function GoogleConnection({
       </p>
     </section>
   );
+}
+
+export function GoogleConnection(props: { onError: (message: string) => void }) {
+  return isDesktop() ? <NativeGoogleConnection {...props} /> : <BrowserGoogleConnection {...props} />;
 }

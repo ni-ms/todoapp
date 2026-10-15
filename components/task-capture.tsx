@@ -13,6 +13,12 @@ import {
   type Tag,
   type TaskInput,
 } from "@/lib/domain";
+import {
+  extractTasks,
+  transcribeAudio,
+  readContextFiles,
+  aiSettings,
+} from "@/lib/ai";
 import { recordingWav } from "@/lib/audio";
 interface ContextItem {
   id: string;
@@ -47,12 +53,21 @@ export function TaskCapture({
     [busy, setBusy] = useState(false),
     [recording, setRecording] = useState(false),
     [error, setError] = useState(""),
-    [hint, setHint] = useState("");
+    [hint, setHint] = useState(""),
+    [hosted, setHosted] = useState(false);
   const recorder = useRef<MediaRecorder | null>(null),
     stream = useRef<MediaStream | null>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     mounted = useRef(true),
-    contextsRef = useRef<ContextItem[]>([]);
+    contextsRef = useRef<ContextItem[]>([]),
+    filesInput = useRef<HTMLInputElement>(null),
+    folderInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!isDesktop())
+      aiSettings()
+        .then((s) => setHosted(s.provider === "openrouter"))
+        .catch(() => {});
+  }, []);
   useEffect(() => {
     contextsRef.current = contexts;
   }, [contexts]);
@@ -63,11 +78,16 @@ export function TaskCapture({
       if (timer.current) clearTimeout(timer.current);
       if (recorder.current?.state === "recording") recorder.current.stop();
       stream.current?.getTracks().forEach((t) => t.stop());
-      for (const c of contextsRef.current)
-        invoke("remove_context", { id: c.id }).catch(() => {});
+      if (isDesktop())
+        for (const c of contextsRef.current)
+          invoke("remove_context", { id: c.id }).catch(() => {});
     };
   }, []);
   async function attach(folder: boolean) {
+    if (!isDesktop()) {
+      (folder ? folderInput : filesInput).current?.click();
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -127,9 +147,7 @@ export function TaskCapture({
             new Blob(chunks, { type: capture.mimeType }),
           );
           if (!mounted.current) return;
-          const transcript = await invoke<string>("transcribe_audio", {
-            audio,
-          });
+          const transcript = await transcribeAudio(audio);
           if (mounted.current) {
             setText((previous) =>
               [previous, transcript].filter(Boolean).join("\n"),
@@ -163,13 +181,27 @@ export function TaskCapture({
     setError("");
     setDrafts([]);
     try {
-      const result = await invoke<Omit<Draft, "selected">[]>("extract_tasks", {
+      const result = await extractTasks(
         text,
-        contextIds: contexts.filter((c) => c.selected).map((c) => c.id),
-        today: localDate(),
-      });
+        contexts.filter((c) => c.selected),
+        localDate(),
+      );
       if (mounted.current)
-        setDrafts(result.map((d) => ({ ...d, tagIds: [...new Set([...d.tagIds, ...(defaultTag && tags.some((tag) => tag.id === defaultTag && !tag.deletedAt) ? [defaultTag] : [])])], selected: true })));
+        setDrafts(
+          result.map((d) => ({
+            ...d,
+            tagIds: [
+              ...new Set([
+                ...d.tagIds,
+                ...(defaultTag &&
+                tags.some((tag) => tag.id === defaultTag && !tag.deletedAt)
+                  ? [defaultTag]
+                  : []),
+              ]),
+            ],
+            selected: true,
+          })),
+        );
     } catch (e) {
       if (mounted.current) setError(String(e));
     } finally {
@@ -180,6 +212,34 @@ export function TaskCapture({
     setDrafts((all) =>
       all.map((d, i) => (i === index ? { ...d, ...patch } : d)),
     );
+  async function browserFiles(files: File[]) {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await readContextFiles(files);
+      if (
+        contexts.length + result.items.length > 20 ||
+        new TextEncoder().encode(
+          [...contexts, ...result.items].map((c) => c.text).join(""),
+        ).length > 60000
+      )
+        throw new Error(
+          "Remove some attachments first (20 files / 60 KB maximum).",
+        );
+      setContexts((c) => [
+        ...c,
+        ...result.items.map((i) => ({ ...i, selected: true })),
+      ]);
+      setHint(
+        `${result.items.length} text/code files added. ${result.skipped} unsupported, large, hidden, generated, or sensitive-name files skipped.`,
+      );
+      setDrafts([]);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="surface mb-6 p-5 sm:p-6" aria-label="Task capture">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -188,9 +248,42 @@ export function TaskCapture({
           What do you need to get done?
         </h2>
         <Button size="sm" variant="ghost" onClick={onSettings}>
-          Local AI setup
+          AI setup
         </Button>
       </div>
+      {!isDesktop() && (
+        <>
+          <input
+            ref={filesInput}
+            type="file"
+            multiple
+            hidden
+            aria-label="Attach text files"
+            onChange={(e) => {
+              void browserFiles(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={folderInput}
+            type="file"
+            multiple
+            hidden
+            {...{ webkitdirectory: "" }}
+            aria-label="Attach a folder"
+            onChange={(e) => {
+              void browserFiles(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
+          />
+        </>
+      )}
+      {hosted && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Creating drafts sends your request, checked excerpts, and active tag
+          names to OpenRouter and its model provider.
+        </p>
+      )}
       <Textarea
         aria-label="Task request"
         placeholder="I need to finish my algorithms assignment by Friday and spend an hour on my portfolio…"
@@ -207,7 +300,7 @@ export function TaskCapture({
         <Button
           size="sm"
           variant={recording ? "destructive" : "outline"}
-          disabled={busy || !isDesktop()}
+          disabled={busy}
           onClick={mic}
           aria-label={recording ? "Stop recording" : "Record task request"}
         >
@@ -217,7 +310,7 @@ export function TaskCapture({
         <Button
           size="sm"
           variant="ghost"
-          disabled={busy || recording || !isDesktop()}
+          disabled={busy || recording}
           onClick={() => attach(false)}
         >
           <Paperclip />
@@ -226,7 +319,7 @@ export function TaskCapture({
         <Button
           size="sm"
           variant="ghost"
-          disabled={busy || recording || !isDesktop()}
+          disabled={busy || recording}
           onClick={() => attach(true)}
         >
           <FolderPlus />
@@ -235,19 +328,17 @@ export function TaskCapture({
         <Button
           size="sm"
           className="sm:ml-auto"
-          disabled={busy || recording || !text.trim() || !isDesktop()}
+          disabled={busy || recording || !text.trim()}
           onClick={generate}
         >
           <Sparkles />
-          {busy ? "Working locally…" : "Create task drafts"}
+          {busy ? "Creating drafts…" : "Create task drafts"}
         </Button>
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         {recording
           ? "Recording… Stops after 90 seconds. Audio goes only to your local Whisper server."
-          : isDesktop()
-            ? "Type or record, review the drafts, then add them. Selected file excerpts go only to your local model."
-            : "Open the desktop app to use local AI, recording, and file context."}
+          : "Review AI setup to choose where requests are processed. Recording always uses your local Whisper server. Review drafts before adding them."}
       </p>
       {contexts.length > 0 && (
         <details className="mt-4 rounded-lg border p-3 text-xs">
@@ -288,7 +379,8 @@ export function TaskCapture({
                   aria-label={`Remove ${c.name}`}
                   onClick={async () => {
                     try {
-                      await invoke("remove_context", { id: c.id });
+                      if (isDesktop())
+                        await invoke("remove_context", { id: c.id });
                       setContexts((all) => all.filter((i) => i.id !== c.id));
                       setDrafts([]);
                     } catch (e) {

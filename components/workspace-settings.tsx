@@ -1,4 +1,5 @@
 "use client";
+import { BrowserFolderBackup } from "./browser-folder-backup";
 import { LocalAISettings } from "@/components/local-ai-settings";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -186,9 +187,7 @@ export function WorkspaceSettings({
             </div>
           </>
         ) : (
-          <p className="mt-4 text-xs text-muted-foreground">
-            Open the desktop app to choose a cloud folder.
-          </p>
+          <BrowserFolderBackup onError={onError} />
         )}
         <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
           This backs up this device. It does not merge changes from other
