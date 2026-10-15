@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-extract-tasks"
+description = "Enables the extract_tasks command without any pre-configured scope."
+commands.allow = ["extract_tasks"]
+
+[[permission]]
+identifier = "deny-extract-tasks"
+description = "Denies the extract_tasks command without any pre-configured scope."
+commands.deny = ["extract_tasks"]

@@ -2,7 +2,7 @@
 import React, {useState} from 'react'
 import StepItem from './step_item';
 
-interface Step {
+export interface Step {
     id: number;
     title: string;
     status: 'Todo' | 'Doing' | 'Done';
@@ -30,19 +30,16 @@ const TodoContainer = ({day, todos, onSaveTodo, onDeleteTodo}: TodoContainerProp
     const [title, setTitle] = useState<string>("");
     const [priority, setPriority] = useState<number | null>(null);
     const [description, setDescription] = useState<string | null>("");
-    const [tags, setTags] = useState<string[] | null>(null);
+    const [tagsInput, setTagsInput] = useState("");
     const [status, setStatus] = useState<'Todo' | 'Doing' | 'Done'>('Todo');
 
-    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, setState: React.Dispatch<React.SetStateAction<any>>) => {
-        setState(event.target.value);
-    }
     const handleEditClick = (id: number) => {
         const todo = todos.find(todo => todo.id === id);
         if (todo) {
             setTitle(todo.title);
             setPriority(todo.priority);
             setDescription(todo.description);
-            setTags(todo.tags);
+            setTagsInput(todo.tags?.join(", ") ?? "");
             setStatus(todo.status);
             setEditing(id);
         }
@@ -53,13 +50,15 @@ const TodoContainer = ({day, todos, onSaveTodo, onDeleteTodo}: TodoContainerProp
     }
 
     const handleSaveClick = (id: number) => {
+        const existing = todos.find(todo => todo.id === id);
+        if (!existing) return;
         const newTodo: Todo = {
+            ...existing,
             id,
             title,
             description,
             priority,
-            steps: null, // Update this as needed
-            tags,
+            tags: tagsInput.split(",").map(tag => tag.trim()).filter(Boolean),
             status,
         };
         onSaveTodo(id, newTodo);
@@ -84,15 +83,15 @@ const TodoContainer = ({day, todos, onSaveTodo, onDeleteTodo}: TodoContainerProp
                                 <input
                                     id="title"
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    type="text" value={title} onChange={(e) => handleInputChange(e, setTitle)}/>
+                                    type="text" value={title} onChange={(e) => setTitle(e.target.value)}/>
 
                                 <label className="block text-gray-700 text-sm font-bold mb-2"
                                        htmlFor="priority">Priority:</label>
                                 <input
                                     id="priority"
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    type="number" value={priority || ""}
-                                    onChange={(e) => handleInputChange(e, setPriority)}/>
+                                    type="number" value={priority ?? ""}
+                                    onChange={(e) => setPriority(e.target.value === "" ? null : Number(e.target.value))}/>
 
                                 <label className="block text-gray-700 text-sm font-bold mb-2"
                                        htmlFor="description">Description:</label>
@@ -100,21 +99,21 @@ const TodoContainer = ({day, todos, onSaveTodo, onDeleteTodo}: TodoContainerProp
                                     id="description"
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                     type="text" value={description || ""}
-                                    onChange={(e) => handleInputChange(e, setDescription)}/>
+                                    onChange={(e) => setDescription(e.target.value)}/>
 
                                 <label className="block text-gray-700 text-sm font-bold mb-2"
                                        htmlFor="tags">Tags:</label>
                                 <input
                                     id="tags"
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    type="text" value={tags?.join(", ") || ""}
-                                    onChange={(e) => handleInputChange(e, setTags)}/>
+                                    type="text" value={tagsInput}
+                                    onChange={(e) => setTagsInput(e.target.value)}/>
 
                                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="status">Status:</label>
                                 <select
                                     id="status"
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    value={status} onChange={(e) => handleInputChange(e, setStatus)}>
+                                    value={status} onChange={(e) => setStatus(e.target.value as Todo['status'])}>
                                     <option value="Todo">Todo</option>
                                     <option value="Doing">Doing</option>
                                     <option value="Done">Done</option>
@@ -142,9 +141,9 @@ const TodoContainer = ({day, todos, onSaveTodo, onDeleteTodo}: TodoContainerProp
                                 </div>
                                 <h4 className="mb-2">Priority: {todo.priority}</h4>
                                 <p className="mb-2">{todo.description}</p>
-                                <p className="mb-2">Tags: {todo.tags}</p>
+                                <p className="mb-2">Tags: {todo.tags?.join(", ")}</p>
                                 <p className="mb-2">Status: {todo.status}</p>
-                                {todo.steps && <StepItem steps={todo.steps}/>}
+                                {todo.steps && <StepItem steps={todo.steps} onSaveStep={(step) => onSaveTodo(todo.id, {...todo, steps: todo.steps?.map(existing => existing.id === step.id ? step : existing) ?? null})}/>}
                             </>
                         )}
 

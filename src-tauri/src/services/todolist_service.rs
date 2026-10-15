@@ -1,8 +1,5 @@
 // Build the list using singleton and builder design pattern
 
-use std::cell::OnceCell;
-use std::sync::Mutex;
-use crate::todo_utils::todolist::{Day, TodoList};
 //
 // struct TodolistSingleton;
 // static INSTANCE: OnceCell<Mutex<TodoList>> = OnceCell::new();

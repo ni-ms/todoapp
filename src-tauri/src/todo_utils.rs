@@ -159,32 +159,55 @@ pub fn get_step_from_todo_item(
 }
 
 pub fn delete_todo_item_from_todo_list(todo_list: &mut TodoList, id: i32) {
-    let mut index = 0;
-    for (i, item) in todo_list.items.iter().enumerate() {
-        if item.id == id {
-            index = i;
-            break;
-        }
-    }
-    todo_list.items.remove(index);
+    todo_list.items.retain(|item| item.id != id);
 }
 
 pub fn delete_step_from_todo_item(todo_item: &mut todoitem::TodoItem, id: i32) {
-    let mut index = 0;
-    for (i, step) in todo_item.steps.clone().unwrap().iter().enumerate() {
-        if step.id == id {
-            index = i;
-            break;
-        }
+    if let Some(steps) = todo_item.steps.as_mut() {
+        steps.retain(|step| step.id != id);
     }
-    let mut steps = todo_item.steps.clone().unwrap();
-    steps.remove(index);
-    todo_item.steps = Some(steps);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deleting_unknown_ids_preserves_items_and_handles_empty_lists() {
+        let mut list = create_todo_list(
+            1,
+            "List".into(),
+            "2026-10-14".into(),
+            Day::Monday,
+            None,
+            vec![],
+        );
+        delete_todo_item_from_todo_list(&mut list, 99);
+        let mut item = create_todo_item(
+            1,
+            "Task".into(),
+            None,
+            None,
+            None,
+            None,
+            todoitem::Status::Todo,
+        );
+        delete_step_from_todo_item(&mut item, 99);
+        assert!(item.steps.is_none());
+        add_step_to_todo_item(
+            &mut item,
+            create_step_item(1, "Step".into(), stepitem::Status::Todo),
+        );
+        delete_step_from_todo_item(&mut item, 99);
+        assert_eq!(item.steps.as_ref().unwrap().len(), 1);
+        delete_step_from_todo_item(&mut item, 1);
+        assert!(item.steps.as_ref().unwrap().is_empty());
+        add_todo_item_to_todo_list(&mut list, item);
+        delete_todo_item_from_todo_list(&mut list, 99);
+        assert_eq!(list.items.len(), 1);
+        delete_todo_item_from_todo_list(&mut list, 1);
+        assert!(list.items.is_empty());
+    }
 
     #[test]
     fn test_create_and_modify_todo_list() {
@@ -206,7 +229,7 @@ mod tests {
             None,
             todoitem::Status::Todo,
         );
-        let mut todo_item2 = create_todo_item(
+        let todo_item2 = create_todo_item(
             2,
             "Test 2".to_string(),
             Some("Description".to_string()),
@@ -215,7 +238,7 @@ mod tests {
             None,
             todoitem::Status::Todo,
         );
-        let mut todo_item3 = create_todo_item(
+        let todo_item3 = create_todo_item(
             3,
             "Test 3".to_string(),
             Some("Description".to_string()),
@@ -224,7 +247,7 @@ mod tests {
             None,
             todoitem::Status::Todo,
         );
-        let mut todo_item4 = create_todo_item(
+        let todo_item4 = create_todo_item(
             4,
             "Test 4".to_string(),
             Some("Description".to_string()),
@@ -233,7 +256,7 @@ mod tests {
             None,
             todoitem::Status::Todo,
         );
-        let mut todo_item5 = create_todo_item(
+        let todo_item5 = create_todo_item(
             5,
             "Test 5".to_string(),
             Some("Description".to_string()),
@@ -274,7 +297,7 @@ mod tests {
         );
 
         // Create a new TodoItem
-        let mut todo_item1 = create_todo_item(
+        let todo_item1 = create_todo_item(
             1,
             "Test 1".to_string(),
             Some("Description".to_string()),
