@@ -1,11 +1,4 @@
-import React from 'react'
-import Link from "next/link";
-
-const SettingsPage = () => {
-    return (
-        <>
-            <div>SettingsPage</div>
-        </>
-    )
+import LearnerWorkspace from "@/components/learner-workspace";
+export default function SettingsPage() {
+  return <LearnerWorkspace initialView="settings" />;
 }
-export default SettingsPage

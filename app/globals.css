@@ -1,33 +1,194 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fullcalendar/react/skeleton.css";
+@import "@fullcalendar/react/themes/classic/theme.css";
+@import "@fullcalendar/react/themes/classic/palette.css";
 
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--primary);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+  --radius-sm: 0.4rem;
+  --radius-md: 0.6rem;
+  --radius-lg: 0.85rem;
+  --radius-xl: 1.15rem;
+  --font-sans: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+}
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  color-scheme: light;
+  --background: #f7f8fa;
+  --foreground: #242333;
+  --card: #ffffff;
+  --primary: #6550d9;
+  --primary-foreground: #ffffff;
+  --secondary: #eff0f4;
+  --muted: #f4f4f7;
+  --muted-foreground: #727381;
+  --accent: #eeebfc;
+  --border: #e8e8ef;
+  --destructive: #c23e50;
 }
-
+.dark {
+  color-scheme: dark;
+  --background: #16171e;
+  --foreground: #f0eff7;
+  --card: #1e1f29;
+  --primary: #b1a2ff;
+  --primary-foreground: #211845;
+  --secondary: #292a36;
+  --muted: #262732;
+  --muted-foreground: #a6a7ba;
+  --accent: #30294c;
+  --border: #343542;
+  --destructive: #ff8c9c;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: #16171e;
+    --foreground: #f0eff7;
+    --card: #1e1f29;
+    --primary: #b1a2ff;
+    --primary-foreground: #211845;
+    --secondary: #292a36;
+    --muted: #262732;
+    --muted-foreground: #a6a7ba;
+    --accent: #30294c;
+    --border: #343542;
+    --destructive: #ff8c9c;
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--foreground);
+  }
+}
+@layer components {
+  .field-select {
+    @apply flex h-10 w-full min-w-0 rounded-md border bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50;
+  }
+  .surface {
+    @apply rounded-xl border bg-card;
+  }
+  .eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground;
+  }
+  .area-dot {
+    @apply inline-block size-2 shrink-0 rounded-full;
+    background: var(--area-color);
+  }
+  .area-violet {
+    --area-color: #8870e8;
+    --area-soft: #8870e815;
+  }
+  .area-blue {
+    --area-color: #528cd9;
+    --area-soft: #528cd915;
+  }
+  .area-emerald {
+    --area-color: #39a289;
+    --area-soft: #39a28915;
+  }
+  .area-amber {
+    --area-color: #c78a29;
+    --area-soft: #c78a2915;
+  }
+  .area-rose {
+    --area-color: #d56a8a;
+    --area-soft: #d56a8a15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+.calendar-shell {
+  --fc-classic-background: var(--card);
+  --fc-classic-foreground: var(--foreground);
+  --fc-classic-border: var(--border);
+  --fc-classic-faint: var(--muted);
+  --fc-classic-primary: var(--primary);
+  --fc-classic-primary-foreground: var(--primary-foreground);
+  --fc-classic-today: color-mix(in srgb, var(--accent) 35%, transparent);
+  --fc-classic-highlight: color-mix(in srgb, var(--primary) 10%, transparent);
+  --fc-classic-button: var(--primary);
+  --fc-classic-button-foreground: var(--primary-foreground);
+}
+.calendar-shell .fc {
+  font-size: 12px;
+}
+.calendar-shell .fc-timegrid-slot {
+  height: 30px;
+}
+.calendar-shell .fc-col-header-cell {
+  font-weight: 500;
+  padding-block: 10px;
+}
+.calendar-shell .fc-timegrid-axis,
+.calendar-shell .fc-timegrid-slot-label {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.calendar-shell .daymark-event {
+  border-radius: 5px;
+  box-shadow: none;
+}
+.calendar-shell .daymark-deadline {
+  border-radius: 4px;
+  border-style: dashed;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.calendar-slot {
+  height: 26px;
+}
+.calendar-day-header {
+  padding-block: 10px !important;
+  font-weight: 500 !important;
+}
+.calendar-all-day-divider {
+  border-width: 1px !important;
 }

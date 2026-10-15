@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-save-event"
+description = "Enables the save_event command without any pre-configured scope."
+commands.allow = ["save_event"]
+
+[[permission]]
+identifier = "deny-save-event"
+description = "Denies the save_event command without any pre-configured scope."
+commands.deny = ["save_event"]

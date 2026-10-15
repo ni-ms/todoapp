@@ -3,61 +3,34 @@ import React, {MouseEventHandler, useState} from 'react'
 interface ToolbarProps {
     onFilter: MouseEventHandler<HTMLButtonElement>;
     onSearch: MouseEventHandler<HTMLButtonElement>;
-    onNewTodo: MouseEventHandler<HTMLButtonElement>;
+    onNewTodo: (title: string) => void;
 }
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreate: (todo: any) => void;
+    onCreate: (title: string) => void;
 }
 
 const TodoModal = ({isOpen, onClose, onCreate}: ModalProps) => {
 
-    let title = '';
-
-    const [days, setDays] = useState<{
-        [key: string]: boolean;
-    }>({
-        'Monday': false,
-        'Tuesday': false,
-        'Wednesday': false,
-        'Thursday': false,
-        'Friday': false,
-        'Saturday': false,
-        'Sunday': false,
-    });
+    const [title, setTitle] = useState('');
 
     const handleCreate = () => {
-        onCreate({title, days});
+        if (!title.trim()) return;
+        onCreate(title.trim());
+        setTitle("");
         onClose();
     }
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-4 rounded">
-                <h2 className="text-lg font-bold">New Todo</h2>
-                <table className="mt-2">
-                    <tbody>
-                    {Object.keys(days).map(day => (
-                        <tr key={day}>
-                            <td className="pr-2">
-                                <label className="text-gray-700">
-                                    {day}
-                                </label>
-                            </td>
-                            <td>
-                                <input type="checkbox" checked={days[day]}
-                                       onChange={() => setDays({...days, [day]: !days[day]})}
-                                       className="form-checkbox h-5 w-5 text-blue-600"
-                                />
-                            </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
+        <div className="fixed top-0 left-0 w-full h-full bg-gray-800/50 flex items-center justify-center">
+            <div role="dialog" aria-modal="true" aria-label="New Todo" className="bg-white p-4 rounded">
+                <h2 className="text-lg font-bold text-gray-900">New Todo</h2>
+                <label className="block text-gray-700" htmlFor="new-todo-title">Title</label>
+                <input id="new-todo-title" className="border rounded p-2 text-gray-900" value={title} onChange={event => setTitle(event.target.value)} />
                 <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
                         onClick={handleCreate}>Create
                 </button>
@@ -79,8 +52,8 @@ const Toolbar = ({onFilter, onSearch, onNewTodo}: ToolbarProps) => {
         setModalOpen(true);
     };
 
-    const handleCreate = (todo: any) => {
-        onNewTodo(todo);
+    const handleCreate = (title: string) => {
+        onNewTodo(title);
         setModalOpen(false);
     };
     return (

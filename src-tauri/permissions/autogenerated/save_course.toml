@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-save-course"
+description = "Enables the save_course command without any pre-configured scope."
+commands.allow = ["save_course"]
+
+[[permission]]
+identifier = "deny-save-course"
+description = "Denies the save_course command without any pre-configured scope."
+commands.deny = ["save_course"]

@@ -1,12 +1,8 @@
 import React, { useState } from 'react'
 
-interface Step {
-    id: number;
-    title: string;
-    status: 'Todo' | 'Doing' | 'Done';
-}
+import type { Step } from './todo_container';
 
-const StepItem = ({steps}: {steps: Step[]}) => {
+const StepItem = ({steps, onSaveStep}: {steps: Step[]; onSaveStep: (step: Step) => void}) => {
     const [editingStep, setEditingStep] = useState<number | null>(null);
     const [stepTitle, setStepTitle] = useState<string>("");
     const [stepStatus, setStepStatus] = useState<'Todo' | 'Doing' | 'Done'>('Todo');
@@ -18,8 +14,7 @@ const StepItem = ({steps}: {steps: Step[]}) => {
     }
 
     const handleSaveStepClick = (id: number) => {
-        // Update the step with id using stepTitle and stepStatus
-        // This will depend on how you're managing state in your application
+        onSaveStep({id, title: stepTitle, status: stepStatus});
         setEditingStep(null);
     }
 
