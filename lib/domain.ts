@@ -1,7 +1,11 @@
 export type AreaKind = "course" | "project" | "career";
 export type Color = "violet" | "blue" | "emerald" | "amber" | "rose";
 export type TaskKind =
-  "study" | "assignment" | "coding" | "career" | "personal";
+  | "study"
+  | "assignment"
+  | "coding"
+  | "career"
+  | "personal";
 export type Status = "todo" | "doing" | "done";
 export type Priority = "low" | "medium" | "high";
 interface RecordMetadata {
@@ -33,13 +37,20 @@ export type TaskInput = Omit<Task, keyof RecordMetadata | "tagIds"> & {
   id?: string;
   tagIds?: string[];
 };
+export interface Area extends RecordMetadata {
+  name: string; color: Color; icon: string; tagIds: string[];
+}
+export type AreaInput = Omit<Area, keyof RecordMetadata> & { id?: string };
 export interface Workspace {
+  areas: Area[];
   courses: Course[];
   tasks: Task[];
   tags: Tag[];
   events: CalendarEvent[];
+  organizationVersion?: number;
 }
 export const emptyWorkspace = (): Workspace => ({
+  areas: [],
   courses: [],
   tasks: [],
   tags: defaultTags(),
@@ -142,8 +153,14 @@ export interface Tag extends RecordMetadata {
   name: string;
   color: Color;
   icon: string;
+  description?: string;
+  code?: string;
+  kind?: "label" | AreaKind;
 }
-export type TagInput = Pick<Tag, "name" | "color" | "icon"> & { id?: string };
+export type TagInput = Pick<
+  Tag,
+  "name" | "color" | "icon" | "description" | "code" | "kind"
+> & { id?: string };
 export interface CalendarEvent extends RecordMetadata {
   title: string;
   description: string;
@@ -199,8 +216,15 @@ export function defaultTags(): Tag[] {
   }));
 }
 export function validateTag(value: TagInput) {
-  if (!value.name.trim() || value.name.trim().length > 40)
-    throw new Error("Tag names must be 1–40 characters.");
+  if (!value.name.trim() || value.name.trim().length > 200)
+    throw new Error("Tag names must be 1–200 characters.");
+  if (
+    (value.description?.length ?? 0) > 4000 ||
+    (value.code?.length ?? 0) > 30 ||
+    (value.kind &&
+      !["label", "course", "project", "career"].includes(value.kind))
+  )
+    throw new Error("Invalid tag details.");
   if (!colors.includes(value.color)) throw new Error("Choose a tag color.");
   if (
     !(presetIcons as readonly string[]).includes(value.icon) &&

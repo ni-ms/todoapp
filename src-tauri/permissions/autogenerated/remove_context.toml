@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-remove-context"
+description = "Enables the remove_context command without any pre-configured scope."
+commands.allow = ["remove_context"]
+
+[[permission]]
+identifier = "deny-remove-context"
+description = "Denies the remove_context command without any pre-configured scope."
+commands.deny = ["remove_context"]

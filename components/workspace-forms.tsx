@@ -36,16 +36,14 @@ interface FormProps<T> {
 }
 export function TaskForm({
   task,
-  courses,
-  defaultCourse,
+  defaultTag,
   tags,
   busy,
   onSave,
   onCancel,
 }: FormProps<TaskInput> & {
   task?: Task;
-  courses: Course[];
-  defaultCourse?: string;
+  defaultTag?: string;
   tags: Tag[];
 }) {
   const [value, setValue] = useState<TaskInput>(() =>
@@ -54,15 +52,17 @@ export function TaskForm({
       : {
           title: "",
           description: "",
-          courseId: defaultCourse ?? null,
+          courseId: null,
           kind: "study",
           status: "todo",
           priority: "medium",
           dueDate: null,
           estimateMinutes: 30,
-          tagIds: tags.some((t) => t.id === "tag-learning" && !t.deletedAt)
-            ? ["tag-learning"]
-            : [],
+          tagIds: defaultTag
+            ? [defaultTag]
+            : tags.some((t) => t.id === "tag-learning" && !t.deletedAt)
+              ? ["tag-learning"]
+              : [],
         },
   );
   const [error, setError] = useState("");
@@ -96,29 +96,6 @@ export function TaskForm({
             value={value.title}
             onChange={(e) => set("title", e.target.value)}
           />
-        </div>
-        <div className="space-y-2">
-          <div className="space-y-2">
-            <Label htmlFor="task-area">Course or project</Label>
-            <select
-              id="task-area"
-              className="field-select"
-              value={value.courseId ?? ""}
-              onChange={(e) => set("courseId", e.target.value || null)}
-            >
-              <option value="">No area · personal task</option>
-              {courses
-                .filter(
-                  (course) => !course.deletedAt || course.id === value.courseId,
-                )
-                .map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name}
-                    {course.deletedAt ? " (in Trash)" : ""}
-                  </option>
-                ))}
-            </select>
-          </div>
         </div>
         <div className="space-y-2">
           <Label>Tags</Label>

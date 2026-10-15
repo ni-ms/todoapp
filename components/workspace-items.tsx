@@ -1,10 +1,5 @@
 "use client";
 import {
-  BookOpen,
-  GraduationCap,
-  Code2,
-  Compass,
-  Circle,
   ListTodo,
   Clock3,
   CalendarDays,
@@ -18,21 +13,7 @@ import { TagIcon } from "@/components/tag-icon";
 import type { Tag } from "@/lib/domain";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  duration,
-  formatDate,
-  statusLabels,
-  taskLabels,
-  type Task,
-  type Course,
-} from "@/lib/domain";
-const workIcons = {
-  study: BookOpen,
-  assignment: GraduationCap,
-  coding: Code2,
-  career: Compass,
-  personal: Circle,
-};
+import { duration, formatDate, statusLabels, type Task } from "@/lib/domain";
 export function Metric({
   icon: Icon,
   label,
@@ -62,7 +43,6 @@ export function Metric({
 export function TaskRow({
   task,
   tags,
-  course,
   today,
   busy,
   onEdit,
@@ -71,14 +51,12 @@ export function TaskRow({
 }: {
   task: Task;
   tags: Tag[];
-  course?: Course;
   today: string;
   busy: boolean;
   onEdit: () => void;
   onComplete: () => void;
   onTrash: () => void;
 }) {
-  const Icon = workIcons[task.kind];
   const done = task.status === "done";
   const overdue = !done && task.dueDate && task.dueDate < today;
   return (
@@ -116,20 +94,6 @@ export function TaskRow({
           )}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] text-muted-foreground">
-          {course ? (
-            <span
-              className={`inline-flex items-center gap-1.5 area-${course.color}`}
-            >
-              <span className="area-dot !size-1.5" />
-              {course.code || course.name}
-              {course.deletedAt ? " · in Trash" : ""}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1">
-              <Icon className="size-3" />
-              {taskLabels[task.kind]}
-            </span>
-          )}
           <span className="flex items-center gap-1">
             <Clock3 className="size-3" />
             {duration(task.estimateMinutes)}

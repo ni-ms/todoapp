@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-save-area"
+description = "Enables the save_area command without any pre-configured scope."
+commands.allow = ["save_area"]
+
+[[permission]]
+identifier = "deny-save-area"
+description = "Denies the save_area command without any pre-configured scope."
+commands.deny = ["save_area"]

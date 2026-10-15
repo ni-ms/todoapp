@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-purge-record"
+description = "Enables the purge_record command without any pre-configured scope."
+commands.allow = ["purge_record"]
+
+[[permission]]
+identifier = "deny-purge-record"
+description = "Denies the purge_record command without any pre-configured scope."
+commands.deny = ["purge_record"]

@@ -1,6 +1,12 @@
+import {
+  unifyTags,
+  purgeFromWorkspace,
+  type TrashEntity,
+} from "./organization";
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import {
   type Workspace,
+  type AreaInput,
   type CourseInput,
   type TaskInput,
   type TagInput,
@@ -17,18 +23,24 @@ import {
 export const isDesktop = () => typeof window !== "undefined" && isTauri();
 export interface WorkspaceStorage {
   load(): Promise<Workspace>;
+  saveArea(input: AreaInput): Promise<Workspace>;
   saveCourse(input: CourseInput): Promise<Workspace>;
   saveTask(input: TaskInput): Promise<Workspace>;
+  purgeRecord(entity: TrashEntity, id: string): Promise<Workspace>;
+  saveTasks(inputs: TaskInput[]): Promise<Workspace>;
   saveTag(input: TagInput): Promise<Workspace>;
   deleteTag(id: string): Promise<Workspace>;
   saveEvent(input: EventInput): Promise<Workspace>;
   setDeleted(
-    entity: "task" | "course" | "tag" | "event",
+    entity: "task" | "course" | "tag" | "event" | "area",
     id: string,
     deleted: boolean,
   ): Promise<Workspace>;
 }
 const native: WorkspaceStorage = {
+  saveArea: (input) => invoke("save_area", { input }),
+  purgeRecord: (entity, id) => invoke("purge_record", { entity, id }),
+  saveTasks: (inputs) => invoke("save_tasks", { inputs }),
   load: () => invoke("load_workspace"),
   saveCourse: (input) => invoke("save_course", { input }),
   saveTask: (input) => invoke("save_task", { input }),
@@ -94,7 +106,10 @@ async function previewTransaction(
         workspace.tasks.forEach(
           (task) => (task.tagIds ??= defaultTagIds(task.kind)),
         );
+        unifyTags(workspace);
+        workspace.areas ??= workspace.tags.filter((t) => !t.deletedAt).map((t) => ({ id: "area-" + t.id, name: t.name, color: t.color, icon: t.icon, tagIds: [t.id], createdAt: t.createdAt, updatedAt: t.updatedAt, deletedAt: null }));
         mutate?.(workspace);
+        unifyTags(workspace);
         store.put(workspace, "current");
       } catch (error) {
         reason = error;
@@ -112,13 +127,47 @@ async function previewTransaction(
   });
 }
 const preview: WorkspaceStorage = {
+  saveArea: (input) => previewTransaction((w) => {
+    validateTag(input);
+    if (!input.tagIds.length) throw new Error("Choose at least one tag for this area.");
+    const old = input.id ? w.areas.find((a) => a.id === input.id && !a.deletedAt) : undefined;
+    if (input.id && !old) throw new Error("Area is no longer available.");
+    checkTags(w, input.tagIds, old?.tagIds ?? []);
+    if (w.areas.some((a) => !a.deletedAt && a.id !== input.id && a.name.toLowerCase() === input.name.trim().toLowerCase())) throw new Error("An area with this name already exists.");
+    const now = new Date().toISOString();
+    const value = { ...input, name: input.name.trim(), id: old?.id ?? crypto.randomUUID(), createdAt: old?.createdAt ?? now, updatedAt: now, deletedAt: null };
+    if (old) Object.assign(old, value); else w.areas.push(value);
+  }),
+  purgeRecord: (entity, id) =>
+    previewTransaction((w) => purgeFromWorkspace(w, entity, id)),
+  saveTasks: (inputs) =>
+    previewTransaction((w) => {
+      if (!inputs.length || inputs.length > 20 || inputs.some((i) => i.id))
+        throw new Error("Choose 1–20 new tasks.");
+      for (const input of inputs) {
+        validateTask(input);
+        checkTags(w, input.tagIds ?? [], []);
+        if (input.courseId) throw new Error("Choose tags instead of a course.");
+      }
+      const now = new Date().toISOString();
+      w.tasks.push(
+        ...inputs.map((input) => ({
+          ...input,
+          id: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
+          tagIds: input.tagIds ?? [],
+        })),
+      );
+    }),
   deleteTag: (id) =>
     previewTransaction((workspace) => {
       if (!workspace.tags.some((tag) => tag.id === id && tag.deletedAt))
         throw new Error("Only archived tags can be permanently deleted.");
       workspace.tags = workspace.tags.filter((tag) => tag.id !== id);
       const now = new Date().toISOString();
-      for (const record of [...workspace.tasks, ...workspace.events]) {
+      for (const record of [...workspace.tasks, ...workspace.events, ...workspace.areas]) {
         if (record.tagIds.includes(id)) {
           record.tagIds = record.tagIds.filter((tagId) => tagId !== id);
           record.updatedAt = now;
@@ -246,7 +295,7 @@ const preview: WorkspaceStorage = {
   setDeleted: (entity, id, deleted) =>
     previewTransaction((workspace) => {
       const records =
-        entity === "task"
+        entity === "area" ? workspace.areas : entity === "task"
           ? workspace.tasks
           : entity === "course"
             ? workspace.courses
@@ -261,9 +310,9 @@ const preview: WorkspaceStorage = {
           "This record is no longer available. Refresh your workspace.",
         );
       if (
-        entity === "tag" &&
+        ["tag", "area"].includes(entity) &&
         !deleted &&
-        workspace.tags.some(
+        (entity === "area" ? workspace.areas : workspace.tags).some(
           (t) =>
             t.id !== id &&
             !t.deletedAt &&

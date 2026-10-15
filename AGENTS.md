@@ -14,13 +14,16 @@
 - `app/` contains routes and global styles. `components/` contains the current prototype UI. `src-tauri/` contains the desktop configuration and Rust models.
 - Next.js exports to `out/`, which Tauri embeds. Preserve static-export compatibility: no reliance on Server Actions, API routes, or a running Next.js server inside the desktop app.
 - The active interface is `components/learner-workspace.tsx`, using shadcn/ui primitives in `components/ui/`, shared form components, and the typed model in `lib/domain.ts`.
-- Desktop tasks and work areas persist in SQLite through `src-tauri/src/workspace.rs` and narrowly scoped Tauri commands. `src-tauri/migrations/` contains transactional schema migrations through version 3, including tags, calendar events, preferences, and Google event state. Work areas support courses, coding projects, and career goals.
+- Desktop tasks and work areas persist in SQLite through `src-tauri/src/workspace.rs` and narrowly scoped Tauri commands. `src-tauri/migrations/` contains transactional schema migrations through version 5, including tags, calendar events, preferences, and Google event state. Version 4 converts courses/projects/career goals to tags, preserving metadata and assignments. The old courses table/commands remain only for compatibility; Areas are independent saved spaces with their own name, icon, color, and one or more associated tags (schema 5). Match tasks/events with ANY active associated tag; multiple areas can share tags. Tags never automatically create, rename, or archive areas. Migration 5 copies previously visible tag spaces once for continuity. Do not restore the legacy courses model or fixed course/project/career divisions.
 - Browser preview explicitly uses separate IndexedDB storage through `lib/storage.ts`; it is not a fallback for failed desktop SQLite access. It can load optional example records only when empty.
 - Existing `todo_utils` models and the older todo components are legacy prototype code, not the active persistence model.
 - The calendar is the default view: FullCalendar 7 weekly time grid, day/month selection, timed/all-day events, drag/resizing, task deadlines, and ICS export. Tasks and scheduled events are separate records. Custom tags support preset icons and normalized uploaded PNG icons. Archived tags can be permanently deleted with confirmation; atomically remove their assignments from tasks/events, including Trash, while retaining those records.
 - Optional native Google OAuth publishes to a dedicated app-created calendar and backs up to Drive app-data. `src-tauri/src/google.rs` owns provider calls, PKCE/loopback sign-in, OS credential storage, event IDs, revisions, and ETags. Publishing is one way; remote edits are not imported. Do not claim live Google sync is verified without an account-level test.
 - `src-tauri/src/backup.rs` supports atomic JSON/ICS backups to a user-chosen local cloud folder. Both backup modes run only while the desktop app is open, approximately once a minute, and do not merge workspaces.
-- shadcn/ui, SQLite CRUD, search and tag filters, recoverable Trash, theme preferences, JSON/ICS export, and manual calendar planning are implemented. Automatic scheduling, AI providers, bidirectional sync, recurring events, and import/restore are **not implemented yet**. See `docs/google-setup.md` for setup and integration limitations.
+- My Day now contains local task capture, a schedule, and due/in-progress tasks. Undated backlog is shown under Tasks unless in progress or scheduled today. My Day has an area dropdown that scopes tasks, the agenda, and defaults for new tasks. Keep the My Day title visible. Areas and tags are separate records; area membership is computed from associated tags. New tasks default to the first active associated tag, editable before saving. The weekly planner explicitly plans across all areas.
+- `src-tauri/src/local_ai.rs` implements fixed-loopback Ollama/Whisper inference, explicit file/folder excerpts, structured draft validation, and app-managed server lifecycles. No hosted AI provider is configured. Keep cloud aliases rejected, proxies/redirects disabled, files bounded and selected explicitly, and model output unable to execute tools.
+- `src-tauri/src/planner.rs` implements on-demand seven-day planning, availability/breaks, busy-time avoidance, effort/deadline/priority allocation, preview fingerprints, atomic apply, and guarded undo. Existing sessions stay fixed. Continuous automatic rescheduling, imported external busy time, recurring habits, bidirectional sync, and import/restore are not implemented.
+- `src-tauri/src/trash.rs` adds confirmed permanent deletion and atomic task batches. Deleting an area preserves all tags, tasks, and events. Deleting a tag removes its area associations as well as task/event assignments; deleting a task detaches calendar events; deleting a course/tag detaches assignments without deleting tasks/events. See `docs/local-ai.md`, `docs/reclaim-review.md`, and `docs/google-setup.md` for scope and verification limits.
 
 ## Intended user experience
 
@@ -75,7 +78,7 @@ Deliver working vertical slices rather than installing the entire proposed stack
 - Keep API keys and OAuth refresh tokens out of frontend bundles, source control, logs, and ordinary task records. Use OS-backed credential storage for persistent secrets.
 - Request only the native capabilities and provider scopes needed for implemented features. Do not expose arbitrary SQL, filesystem access, or shell execution to the UI.
 - Explain which study/calendar content leaves the device for AI features, minimize what is sent, and respect the user's configured choices. Do not upload documents or calendar data implicitly.
-- Preserve user data through migrations. Task/area removal is soft deletion with lossless restore; archived areas retain their task assignments. Do not silently cascade or permanently delete them. JSON export includes items in Trash; native exports go to Downloads. Import is not implemented yet.
+- Preserve user data through transactional migrations. Archive/Trash is recoverable. The user explicitly requested permanent deletion from Trash; expose it only for already trashed records, with a clear in-app confirmation and atomic reference cleanup. Never cascade-delete related tasks or events. JSON export includes Trash; exports go to Downloads. Import is not implemented yet.
 
 ## Development and validation
 
@@ -92,6 +95,8 @@ Deliver working vertical slices rather than installing the entire proposed stack
 
 - [Project setup and current limitations](README.md)
 - [Google sign-in and backup setup](docs/google-setup.md)
+- [Local AI, file context, and planning](docs/local-ai.md)
+- [Reclaim review and scope](docs/reclaim-review.md)
 - [Reclaim feature overview](https://help.reclaim.ai/en/articles/15280604-reclaim-2-0-faq)
 - [shadcn/ui for Next.js](https://ui.shadcn.com/docs/installation/next)
 - [shadcn/ui with React 19 and Tailwind 4](https://ui.shadcn.com/docs/tailwind-v4)

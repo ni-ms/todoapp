@@ -1,8 +1,9 @@
 "use client";
+import { LocalAISettings } from "@/components/local-ai-settings";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Download, FolderSync, RefreshCw, Unplug } from "lucide-react";
-import {GoogleConnection} from "@/components/google-connection";
+import { GoogleConnection } from "@/components/google-connection";
 import { Button } from "@/components/ui/button";
 import { ThemeControl } from "@/components/theme-control";
 import { isDesktop, exportWorkspace, loadPreviewExample } from "@/lib/storage";
@@ -58,7 +59,8 @@ export function WorkspaceSettings({
   }
   return (
     <div className="grid max-w-3xl gap-5">
-      <GoogleConnection onError={onError}/>
+      <LocalAISettings />
+      <GoogleConnection onError={onError} />
       <section className="surface p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Appearance</h2>

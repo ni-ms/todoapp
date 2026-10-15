@@ -85,7 +85,7 @@ impl Store {
                 self.put_preference("backup_error", "")?;
                 return Ok(());
             }
-            let document = serde_json::json!({"format":"daymark-workspace","version":2,"exportedAt":chrono::Utc::now().to_rfc3339(),"courses":snapshot.courses,"tasks":snapshot.tasks,"tags":snapshot.tags,"events":snapshot.events});
+            let document = serde_json::json!({"format":"daymark-workspace","version":2,"exportedAt":chrono::Utc::now().to_rfc3339(),"areas":snapshot.areas,"courses":snapshot.courses,"tasks":snapshot.tasks,"tags":snapshot.tags,"events":snapshot.events});
             let bytes =
                 serde_json::to_vec_pretty(&document).map_err(|_| "Could not prepare backup.")?;
             atomic_write(&json_path, &bytes)?;

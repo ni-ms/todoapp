@@ -6,16 +6,18 @@ Built with Tauri 2, Rust, Next.js 16 static export, React 19, TypeScript, Tailwi
 
 ## What works
 
-- Calendar opens in Week view, with Day and Month options, navigation, tag filtering, and click/select to plan. Create timed or all-day events, link a session to a task, move or resize sessions, and recover deleted events from Trash.
-- Open task deadlines appear as all-day entries. Scheduling an event does not change or complete its source task.
-- Create courses, coding projects, career goals, and tasks with notes, priorities, deadlines, effort estimates, and editable tags. Learning, Building, and Career are starting tags; add more with preset or uploaded icons. Archived tags can be permanently deleted after confirmation; their assignments are removed while tasks and events remain intact.
-- My Day, the task backlog, search/status/tag filters, area-specific task lists, completion/reopening, and recoverable Trash.
-- Local SQLite persistence, system/light/dark themes, responsive navigation, accessible dialogs, and keyboard shortcuts (`N` for a task; `Cmd/Ctrl+K` for visible task search).
-- ICS calendar export and full JSON workspace export, including Trash in JSON. Desktop exports go to Downloads.
-- Optional Google desktop sign-in, one-way publishing to a dedicated Daymark calendar, and a private Drive workspace backup. Automatic sync runs approximately every minute while the app is open. Requires a Google Desktop OAuth client; see [Google setup](docs/google-setup.md). Live account integration has not yet been verified.
-- Optional atomic JSON/ICS backups into a user-chosen local Drive/Dropbox/iCloud folder, without OAuth. Each device has its own files. The external desktop provider uploads them.
+- Calendar opens in Week view, with Day/Month options, tag filtering, timed/all-day events, task links, drag/resize, and ICS export.
+- One tag system for courses, coding projects, career goals, and general labels. Existing courses/projects are migrated to tags with names, notes, short labels, type, timestamps, Trash state, and task assignments preserved. Tasks can have multiple tags. Areas are independent named spaces associated with one or more tags. A task matching any associated active tag appears in the area; tags can be shared across areas. Creating or renaming tags does not create or rename areas. Existing tag spaces are copied once by migration 5.
+- My Day centers on task capture, today's schedule, and due/in-progress work. Its Area dropdown filters tasks and events (including sessions linked to tagged tasks); new manual and AI-drafted tasks default to the first active tag of the selected area (editable before saving). The weekly planner continues to plan across all areas. Undated backlog items stay in Tasks unless in progress or scheduled today. Search, status/tag filters, completion/reopening, and light/dark/system themes remain available.
+- Local voice/text capture with Ollama and whisper.cpp: attach selected text/code files or folders, review excerpts and transcript, edit task drafts, and save an atomic batch. See [local AI setup](docs/local-ai.md). No hosted AI account/API key is needed.
+- Local weekly planning previews with study hours, weekend/break options, deadlines, priorities, busy-time avoidance, split sessions, unscheduled-work explanations, stale-preview protection, and guarded undo.
+- Recoverable Trash for tasks, events, and tags (including course/project tags), plus confirmed permanent deletion. Removing a task keeps its calendar events, detached from the task. Removing a course/tag keeps tasks and events and removes assignments.
+- Desktop SQLite persistence, isolated browser IndexedDB preview, accessible dialogs, responsive navigation, and keyboard shortcuts (`N`, `Cmd/Ctrl+K` for visible search).
+- JSON workspace export and ICS export. Optional Google OAuth publishes to a dedicated calendar and backs up to Drive; a user-chosen cloud-folder alternative writes atomic JSON/ICS backups. Both run while the app is open. See [Google setup](docs/google-setup.md).
 
-AI scheduling, recurrence, study recommendations, spaced review, two-way calendar sync, multi-device merging, and JSON import/restore are not implemented. Due dates and effort estimates do not automatically create sessions. Statistics summarize work; they do not measure mastery. The app works offline; Google features require an explicit connection.
+Continuous automatic rescheduling, recurring habits/focus agents, two-way calendar sync, imported external busy time, PDF/Office context, multi-device merging, JSON import/restore, and learning recommendations are not implemented. Planning is currently on demand. Google live account sync is still unverified. Local Qwen inference and Whisper transcription have been tested with sample inputs; the user microphone permission/device flow needs a manual check.
+
+See [Reclaim review and scope](docs/reclaim-review.md) for the current feature comparison.
 
 ## Requirements and development
 
@@ -46,7 +48,11 @@ Open http://127.0.0.1:3000. **Browser preview stores its data separately in Inde
 - `src-tauri/src/calendar.rs`: authoritative event and tag validation/persistence.
 - `src-tauri/src/google.rs`: native OAuth, calendar publishing, and Drive backup; credentials stay in the OS credential store.
 - `src-tauri/src/backup.rs`: atomic cloud-folder backups.
-- `src-tauri/migrations/`: migrations through schema version 3, run transactionally using `PRAGMA user_version`. Existing tasks get initial tags without losing their data.
+- `src-tauri/src/local_ai.rs`: bounded selected-file context, local model connections, validated drafts, and app-managed local processes.
+- `src-tauri/src/planner.rs`: deterministic scheduling, preview/apply, and guarded undo.
+- `src-tauri/src/trash.rs`: atomic permanent deletion and batch task creation.
+- `components/task-capture.tsx`, `components/planner.tsx`, `components/trash-view.tsx`: the associated review and confirmation workflows.
+- `src-tauri/migrations/`: migrations through schema version 5, run transactionally using `PRAGMA user_version`. Version 4 consolidates courses/projects into tags without losing metadata or assignments; version 5 adds independent areas with tag associations.
 - `src-tauri/src/main.rs`: typed commands executed on blocking workers with serialized database access.
 - `src-tauri/capabilities/workspace.json`: main-window permissions for workspace commands; no arbitrary SQL or filesystem API is exposed.
 
@@ -54,7 +60,7 @@ The SQLite database is `learner.sqlite3` in Tauri's application data directory. 
 
 The identifier remains `com.nikms.todoapp` to preserve app identity and storage paths. The UI uses Daymark as a working name. Prototype task records from the previous in-memory interface were not durable and cannot be recovered after their session ends. Older todo components and Rust `todo_utils` models remain as legacy code; the new SQLite records are the active model.
 
-No AI provider or analytics is connected. Google network access happens in native Rust only after sign-in. The frontend CSP permits bundled assets and local IPC; development additionally permits the Next.js local development server. Backups do not contain OAuth tokens. Disconnect stops future uploads and preserves provider data. Read [the setup guide](docs/google-setup.md) before enabling uploads.
+No hosted AI provider or analytics is connected. Local inference uses fixed loopback endpoints. Google network access happens in native Rust only after sign-in. The frontend CSP permits bundled assets and local IPC; development additionally permits the Next.js local development server. Backups do not contain OAuth tokens. Disconnect stops future uploads and preserves provider data. Read [the setup guide](docs/google-setup.md) before enabling uploads.
 
 ## Checks and builds
 

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-plan-undo-available"
+description = "Enables the plan_undo_available command without any pre-configured scope."
+commands.allow = ["plan_undo_available"]
+
+[[permission]]
+identifier = "deny-plan-undo-available"
+description = "Denies the plan_undo_available command without any pre-configured scope."
+commands.deny = ["plan_undo_available"]

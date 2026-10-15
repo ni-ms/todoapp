@@ -114,9 +114,7 @@ export function TagManager({
               >
                 <TagIcon icon={tag.icon} />
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                {tag.name}
-              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{tag.name}</span>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -127,6 +125,9 @@ export function TagManager({
                     name: tag.name,
                     color: tag.color,
                     icon: tag.icon,
+                    description: tag.description,
+                    code: tag.code,
+                    kind: tag.kind,
                   })
                 }
               >
@@ -155,7 +156,7 @@ export function TagManager({
               .map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center justify-between rounded-lg border px-4 py-2 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-sm"
                 >
                   <span>{t.name}</span>
                   <div className="flex gap-2">
@@ -334,11 +335,54 @@ function TagForm({
           <Input
             id="tag-name"
             required
-            maxLength={40}
+            maxLength={200}
             autoFocus
             value={value.name}
             onChange={(e) => setValue((v) => ({ ...v, name: e.target.value }))}
             placeholder="e.g. Research, Fitness, Interviews"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="tag-kind">Type</Label>
+            <select
+              id="tag-kind"
+              className="field-select"
+              value={value.kind ?? "label"}
+              onChange={(e) =>
+                setValue((v) => ({
+                  ...v,
+                  kind: e.target.value as TagInput["kind"],
+                }))
+              }
+            >
+              <option value="label">General tag</option>
+              <option value="course">Course</option>
+              <option value="project">Project</option>
+              <option value="career">Career goal</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tag-code">Short label (optional)</Label>
+            <Input
+              id="tag-code"
+              maxLength={30}
+              value={value.code ?? ""}
+              onChange={(e) =>
+                setValue((v) => ({ ...v, code: e.target.value }))
+              }
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="tag-description">Notes (optional)</Label>
+          <Input
+            id="tag-description"
+            maxLength={4000}
+            value={value.description ?? ""}
+            onChange={(e) =>
+              setValue((v) => ({ ...v, description: e.target.value }))
+            }
           />
         </div>
         <div className="space-y-2">

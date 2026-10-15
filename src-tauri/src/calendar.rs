@@ -12,6 +12,12 @@ pub struct Tag {
     pub name: String,
     pub color: String,
     pub icon: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub code: String,
+    #[serde(default)]
+    pub kind: String,
     pub created_at: String,
     pub updated_at: String,
     pub deleted_at: Option<String>,
@@ -23,6 +29,12 @@ pub struct TagInput {
     pub name: String,
     pub color: String,
     pub icon: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub code: Option<String>,
+    #[serde(default)]
+    pub kind: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,7 +52,7 @@ pub struct CalendarEvent {
     pub updated_at: String,
     pub deleted_at: Option<String>,
 }
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EventInput {
     pub id: Option<String>,
@@ -66,7 +78,7 @@ impl Store {
             return Err("Only archived tags can be permanently deleted.".into());
         }
         let now = Utc::now().to_rfc3339();
-        for table in ["tasks", "calendar_events"] {
+        for table in ["tasks", "calendar_events", "areas"] {
             let records = transaction
                 .prepare(&format!("SELECT id,tag_ids FROM {table}"))
                 .map_err(sql_error)?
@@ -96,7 +108,7 @@ impl Store {
         self.snapshot()
     }
     pub fn tags(&self) -> Result<Vec<Tag>> {
-        self.connection.prepare("SELECT id,name,color,icon,created_at,updated_at,deleted_at FROM tags ORDER BY created_at,id").map_err(sql_error)?.query_map([],|r|Ok(Tag{id:r.get(0)?,name:r.get(1)?,color:r.get(2)?,icon:r.get(3)?,created_at:r.get(4)?,updated_at:r.get(5)?,deleted_at:r.get(6)?})).map_err(sql_error)?.collect::<std::result::Result<Vec<_>,_>>().map_err(sql_error)
+        self.connection.prepare("SELECT id,name,color,icon,created_at,updated_at,deleted_at,description,code,kind FROM tags ORDER BY created_at,id").map_err(sql_error)?.query_map([],|r|Ok(Tag{id:r.get(0)?,name:r.get(1)?,color:r.get(2)?,icon:r.get(3)?,created_at:r.get(4)?,updated_at:r.get(5)?,deleted_at:r.get(6)?,description:r.get(7)?,code:r.get(8)?,kind:r.get(9)?})).map_err(sql_error)?.collect::<std::result::Result<Vec<_>,_>>().map_err(sql_error)
     }
     pub fn events(&self) -> Result<Vec<CalendarEvent>> {
         self.connection.prepare("SELECT id,title,description,start,end,all_day,time_zone,tag_ids,task_id,created_at,updated_at,deleted_at FROM calendar_events ORDER BY start,id").map_err(sql_error)?.query_map([],|r|Ok(CalendarEvent{id:r.get(0)?,title:r.get(1)?,description:r.get(2)?,start:r.get(3)?,end:r.get(4)?,all_day:r.get(5)?,time_zone:r.get(6)?,tag_ids:serde_json::from_str(&r.get::<_,String>(7)?).unwrap_or_default(),task_id:r.get(8)?,created_at:r.get(9)?,updated_at:r.get(10)?,deleted_at:r.get(11)?})).map_err(sql_error)?.collect::<std::result::Result<Vec<_>,_>>().map_err(sql_error)
@@ -118,8 +130,8 @@ impl Store {
     }
     pub fn save_tag(&self, input: TagInput) -> Result<crate::workspace::Workspace> {
         let name = input.name.trim();
-        if name.is_empty() || name.chars().count() > 40 {
-            return Err("Tag names must be 1–40 characters.".into());
+        if name.is_empty() || name.chars().count() > 200 {
+            return Err("Tag names must be 1–200 characters.".into());
         }
         if !["violet", "blue", "emerald", "amber", "rose"].contains(&input.color.as_str()) {
             return Err("Invalid tag color.".into());
@@ -129,17 +141,26 @@ impl Store {
         if duplicate {
             return Err("A tag with this name already exists.".into());
         }
+        if input.description.as_ref().is_some_and(|s| s.len() > 16000)
+            || input.code.as_ref().is_some_and(|s| s.len() > 120)
+            || input
+                .kind
+                .as_ref()
+                .is_some_and(|s| !["label", "course", "project", "career"].contains(&s.as_str()))
+        {
+            return Err("Invalid tag details.".into());
+        }
         let now = Utc::now().to_rfc3339();
         if let Some(id) = input.id {
             self.require_record("tags", &id, false)?;
             self.connection
                 .execute(
-                    "UPDATE tags SET name=?1,color=?2,icon=?3,updated_at=?4 WHERE id=?5",
-                    params![name, input.color, input.icon, now, id],
+                    "UPDATE tags SET name=?1,color=?2,icon=?3,updated_at=?4,description=COALESCE(?6,description),code=COALESCE(?7,code),kind=COALESCE(?8,kind) WHERE id=?5",
+                    params![name, input.color, input.icon, now, id, input.description, input.code, input.kind],
                 )
                 .map_err(sql_error)?;
         } else {
-            self.connection.execute("INSERT INTO tags (id,name,color,icon,created_at,updated_at) VALUES (?1,?2,?3,?4,?5,?5)",params![Uuid::new_v4().to_string(),name,input.color,input.icon,now]).map_err(sql_error)?;
+            self.connection.execute("INSERT INTO tags (id,name,color,icon,created_at,updated_at,description,code,kind) VALUES (?1,?2,?3,?4,?5,?5,?6,?7,?8)",params![Uuid::new_v4().to_string(),name,input.color,input.icon,now,input.description.unwrap_or_default(),input.code.unwrap_or_default(),input.kind.unwrap_or_else(|| "label".into())]).map_err(sql_error)?;
         }
         self.snapshot()
     }
@@ -300,6 +321,9 @@ mod tests {
                     name: "Research".into(),
                     color: "blue".into(),
                     icon: "flask".into(),
+                    description: None,
+                    code: None,
+                    kind: None,
                 })
                 .unwrap();
             let tag = snapshot
@@ -321,7 +345,10 @@ mod tests {
                     id: None,
                     name: "research".into(),
                     color: "blue".into(),
-                    icon: "flask".into()
+                    icon: "flask".into(),
+                    description: None,
+                    code: None,
+                    kind: None,
                 })
                 .is_err());
         }
@@ -408,7 +435,7 @@ mod tests {
                 .connection
                 .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            3
+            5
         );
     }
 }

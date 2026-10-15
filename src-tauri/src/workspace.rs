@@ -68,6 +68,8 @@ pub struct TaskInput {
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Workspace {
+    #[serde(default)]
+    pub areas: Vec<crate::areas::Area>,
     pub courses: Vec<Course>,
     pub tasks: Vec<Task>,
     #[serde(default)]
@@ -97,7 +99,7 @@ impl Store {
         let version: i64 = transaction
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(sql_error)?;
-        if version > 3 {
+        if version > 5 {
             return Err(
                 "This workspace was created by a newer app. Update the app before opening it."
                     .into(),
@@ -116,6 +118,16 @@ impl Store {
         if version < 3 {
             transaction
                 .execute_batch(include_str!("../migrations/003_google.sql"))
+                .map_err(sql_error)?;
+        }
+        if version < 4 {
+            transaction
+                .execute_batch(include_str!("../migrations/004_unified_tags.sql"))
+                .map_err(sql_error)?;
+        }
+        if version < 5 {
+            transaction
+                .execute_batch(include_str!("../migrations/005_areas.sql"))
                 .map_err(sql_error)?;
         }
         transaction.commit().map_err(sql_error)
@@ -162,6 +174,7 @@ impl Store {
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(sql_error)?;
         Ok(Workspace {
+            areas: self.areas()?,
             courses,
             tasks,
             tags: self.tags()?,
@@ -272,15 +285,16 @@ impl Store {
             "task" => "tasks",
             "course" => "courses",
             "tag" => "tags",
+            "area" => "areas",
             "event" => "calendar_events",
             _ => return Err("Unknown record type.".into()),
         };
         self.require_record(table, id, !deleted)?;
-        if entity == "tag" && !deleted {
-            let duplicate:bool=self.connection.query_row("SELECT EXISTS(SELECT 1 FROM tags WHERE deleted_at IS NULL AND id!=?1 AND lower(name)=(SELECT lower(name) FROM tags WHERE id=?1))",[id],|r|r.get(0)).map_err(sql_error)?;
+        if ["tag", "area"].contains(&entity) && !deleted {
+            let duplicate:bool=self.connection.query_row(&format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE deleted_at IS NULL AND id!=?1 AND lower(name)=(SELECT lower(name) FROM {table} WHERE id=?1))"),[id],|r|r.get(0)).map_err(sql_error)?;
             if duplicate {
                 return Err(
-                    "Another active tag has this name. Rename it before restoring this tag.".into(),
+                    "Another active item has this name. Rename it before restoring.".into(),
                 );
             }
         }

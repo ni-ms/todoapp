@@ -1,26 +1,13 @@
 "use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowRight,
-  BookOpen,
-  CalendarDays,
   Check,
-  CheckCheck,
-  Clock3,
-  Code2,
-  Compass,
   Database,
-  Flag,
-  ListTodo,
   Menu,
-  Pencil,
   Plus,
-  RotateCcw,
   Search,
-  Sparkles,
-  Trash2,
   X,
+  CalendarDays,
 } from "lucide-react";
 import {
   WorkspaceNavigation,
@@ -28,7 +15,6 @@ import {
   type WorkspaceView,
 } from "@/components/workspace-navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -37,81 +23,68 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { Metric, TaskRow } from "@/components/workspace-items";
-import { TaskForm, CourseForm } from "@/components/workspace-forms";
+import { TaskRow } from "@/components/workspace-items";
+import { TaskForm } from "@/components/workspace-forms";
 import { ThemeControl } from "@/components/theme-control";
-import {
-  areaLabels,
-  duration,
-  formatDate,
-  localDate,
-  taskLabels,
-  taskInput,
-  type Course,
-  type Task,
-  type Workspace,
-} from "@/lib/domain";
-import { isDesktop, storage } from "@/lib/storage";
+import { WorkspaceSettings } from "@/components/workspace-settings";
 import CalendarView from "@/components/calendar-view";
 import { EventForm, type CalendarSelection } from "@/components/event-form";
 import { TagManager } from "@/components/tag-manager";
-import { TagIcon } from "@/components/tag-icon";
-import { WorkspaceSettings } from "@/components/workspace-settings";
+import { TrashView } from "@/components/trash-view";
+import { TaskCapture } from "@/components/task-capture";
+import { AreaManager } from "@/components/area-manager";
+import { areaTagIds, taskInArea, eventInArea } from "@/lib/areas";
+import { Planner } from "@/components/planner";
+import { storage, isDesktop } from "@/lib/storage";
 import { exportCalendar } from "@/lib/ical";
-import type { CalendarEvent } from "@/lib/domain";
-import { cn } from "@/lib/utils";
-
-type View = WorkspaceView;
+import {
+  localDate,
+  taskInput,
+  type Workspace,
+  type Task,
+  type CalendarEvent,
+} from "@/lib/domain";
 type Editor =
   | { type: "task"; task?: Task }
-  | { type: "course"; course?: Course }
   | { type: "event"; event?: CalendarEvent; selection?: CalendarSelection }
   | null;
-const areaIcons = { course: BookOpen, project: Code2, career: Compass };
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export default function LearnerWorkspace({
   initialView = "calendar",
 }: {
-  initialView?: View;
+  initialView?: WorkspaceView;
 }) {
-  const [data, setData] = useState<Workspace | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
-  const mutation = useRef(false);
-  const [view, setView] = useState<View>(initialView);
-  const [area, setArea] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("active");
-  const [category, setCategory] = useState("all");
-  const [editor, setEditor] = useState<Editor>(null);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [today, setToday] = useState("");
-  const search = useRef<HTMLInputElement>(null);
-  const editorTrigger = useRef<HTMLElement | null>(null);
+  const [data, setData] = useState<Workspace | null>(null),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState(""),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [busy, setBusy] = useState(false),
+    [view, setView] = useState(initialView),
+    [tag, setTag] = useState<string | null>(null),
+    [query, setQuery] = useState(""),
+    [filter, setFilter] = useState("active"),
+    [editor, setEditor] = useState<Editor>(null),
+    [mobileMenu, setMobileMenu] = useState(false),
+    [today, setToday] = useState("");
+  const mutation = useRef(false),
+    search = useRef<HTMLInputElement>(null),
+    trigger = useRef<HTMLElement | null>(null);
   const openEditor = useCallback((next: NonNullable<Editor>) => {
-    editorTrigger.current =
+    trigger.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     setMobileMenu(false);
     setEditor(next);
   }, []);
-
   const refresh = useCallback(async () => {
     setLoading(true);
     setLoadError("");
     try {
-      const result = await storage().load();
-      setData(result);
-    } catch (error) {
-      setLoadError(errorMessage(error));
+      setData(await storage().load());
+    } catch (e) {
+      setLoadError(message(e));
     } finally {
       setLoading(false);
     }
@@ -120,36 +93,37 @@ export default function LearnerWorkspace({
     let active = true;
     storage()
       .load()
-      .then((result) => {
-        if (active) {
-          setData(result);
-        }
+      .then((w) => {
+        if (active) setData(w);
       })
-      .catch((error) => {
-        if (active) setLoadError(errorMessage(error));
+      .catch((e) => {
+        if (active) setLoadError(message(e));
       })
       .finally(() => {
         if (active) setLoading(false);
       });
-    const updateDate = () => setToday(localDate());
-    updateDate();
-    const interval = setInterval(updateDate, 30_000);
+    const tick = () => setToday(localDate());
+    tick();
+    const timer = setInterval(tick, 30000);
     return () => {
       active = false;
-      clearInterval(interval);
+      clearInterval(timer);
     };
   }, []);
   useEffect(() => {
-    const keydown = (event: KeyboardEvent) => {
+    const onKey = (event: KeyboardEvent) => {
       if (editor) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        search.current?.focus();
+        if (search.current) {
+          event.preventDefault();
+          search.current.focus();
+        }
         return;
       }
-      const target = event.target as HTMLElement;
       if (
-        target.closest("input,select,textarea,[contenteditable=true]") ||
+        (event.target as HTMLElement).closest(
+          "input,select,textarea,[contenteditable=true]",
+        ) ||
         event.metaKey ||
         event.ctrlKey ||
         event.altKey
@@ -160,11 +134,10 @@ export default function LearnerWorkspace({
         openEditor({ type: "task" });
       }
     };
-    window.addEventListener("keydown", keydown);
-    return () => window.removeEventListener("keydown", keydown);
-  }, [editor, data, loading, openEditor]);
-
-  async function commit(action: () => Promise<Workspace>, message: string) {
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [data, editor, loading, openEditor]);
+  async function commit(action: () => Promise<Workspace>, notice: string) {
     if (mutation.current)
       throw new Error("Wait for the current change to finish.");
     mutation.current = true;
@@ -173,56 +146,67 @@ export default function LearnerWorkspace({
     setNotice("");
     try {
       setData(await action());
-      setNotice(message);
-    } catch (error) {
-      throw new Error(errorMessage(error));
+      setNotice(notice);
+    } catch (e) {
+      throw new Error(message(e));
     } finally {
       mutation.current = false;
       setBusy(false);
     }
   }
-  async function act(action: () => Promise<Workspace>, message: string) {
+  async function act(action: () => Promise<Workspace>, notice: string) {
     try {
-      await commit(action, message);
-    } catch (error) {
-      setError(errorMessage(error));
+      await commit(action, notice);
+    } catch (e) {
+      setError(message(e));
     }
   }
-  function navigate(next: View, courseId: string | null = null) {
+  function navigate(next: WorkspaceView, tagId: string | null = null) {
     setView(next);
-    setArea(courseId);
+    setTag(tagId);
     setQuery("");
-    setCategory("all");
     setFilter("active");
     setMobileMenu(false);
   }
-  const courses = data?.courses.filter((course) => !course.deletedAt) ?? [];
-  const tasks = data?.tasks.filter((task) => !task.deletedAt) ?? [];
-  const pending = tasks.filter((task) => task.status !== "done");
-  const completed = tasks.filter((task) => task.status === "done");
-  const dayTasks = tasks.filter(
-    (task) => task.status === "doing" || !task.dueDate || task.dueDate <= today,
+  const tasks = data?.tasks.filter((t) => !t.deletedAt) ?? [],
+    pending = tasks.filter((t) => t.status !== "done"),
+    tags = data?.tags ?? [],
+    areas = data?.areas ?? [],
+    activeArea = areas.find((a) => a.id === tag && !a.deletedAt);
+  const selectedTags = activeArea ? areaTagIds(activeArea, tags) : null;
+  const defaultTag = selectedTags?.[0];
+  const dayEvents =
+    data?.events
+      .filter(
+        (e) =>
+          !e.deletedAt &&
+          (e.allDay
+            ? e.start <= today && e.end > today
+            : localDate(new Date(e.start)) === today ||
+              (new Date(e.start) < new Date(today + "T00:00:00") &&
+                new Date(e.end) > new Date(today + "T00:00:00"))),
+      )
+      .sort((a, b) => a.start.localeCompare(b.start)) ?? [];
+  const areaEvents = dayEvents.filter((event) => eventInArea(event, selectedTags, tasks));
+  const areaPending = pending.filter((task) => taskInArea(task, selectedTags));
+  const dayIds = new Set(dayEvents.map((e) => e.taskId));
+  const dayTasks = pending.filter(
+    (t) =>
+      t.status === "doing" ||
+      (!!t.dueDate && t.dueDate <= today) ||
+      dayIds.has(t.id),
   );
-  const selectedArea = data?.courses.find((course) => course.id === area);
-  const trashCount =
-    (data?.tasks.filter((task) => task.deletedAt).length ?? 0) +
-    (data?.courses.filter((course) => course.deletedAt).length ?? 0) +
-    (data?.events.filter((event) => event.deletedAt).length ?? 0);
-  const pool =
-    view === "today"
-      ? dayTasks
-      : area
-        ? tasks.filter((task) => task.courseId === area)
-        : tasks;
+  const pool = view === "today" ? dayTasks : tasks;
   const visible = pool
     .filter(
-      (task) =>
+      (t) =>
+        taskInArea(t, selectedTags) &&
         (filter === "all" ||
-          (filter === "done"
-            ? task.status === "done"
-            : task.status !== "done")) &&
-        (category === "all" || task.tagIds.includes(category)) &&
-        `${task.title} ${task.description} ${data?.courses.find((c) => c.id === task.courseId)?.name ?? ""}`
+          (filter === "done" ? t.status === "done" : t.status !== "done")) &&
+        `${t.title} ${t.description} ${tags
+          .filter((tag) => t.tagIds.includes(tag.id))
+          .map((t) => t.name)
+          .join(" ")}`
           .toLowerCase()
           .includes(query.toLowerCase()),
     )
@@ -233,39 +217,24 @@ export default function LearnerWorkspace({
         { high: 0, medium: 1, low: 2 }[a.priority] -
           { high: 0, medium: 1, low: 2 }[b.priority],
     );
-  const upcoming = pending
-    .filter((task) => task.dueDate && task.dueDate > today)
-    .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!))
-    .slice(0, 3);
-  const dayPending = dayTasks.filter((task) => task.status !== "done");
-  const totalEffort = dayPending.reduce(
-    (sum, task) => sum + task.estimateMinutes,
-    0,
-  );
-  const progress = tasks.length
-    ? Math.round((completed.length / tasks.length) * 100)
+  const trashCount = data
+    ? [...data.tasks, ...data.courses, ...data.events, ...data.tags, ...data.areas].filter(
+        (r) => r.deletedAt,
+      ).length
     : 0;
-  const ready = Boolean(data) && !loading && !loadError;
-  const dateLabel = today
-    ? new Date(`${today}T12:00:00`).toLocaleDateString(undefined, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      })
-    : "Your learning workspace";
-  const isTaskView = view === "today" || view === "tasks";
-
-  const navigationProps = {
+  const isTaskView = view === "today" || view === "tasks",
+    ready = !!data && !loading && !loadError;
+  const navigation = {
     view,
-    area,
-    courses,
+    area: activeArea?.id ?? null,
+    tags,
+    areas,
     pending,
-    todayCount: dayPending.length,
+    todayCount: dayTasks.length,
     trashCount,
     ready,
     busy,
     navigate,
-    onCreateArea: () => openEditor({ type: "course" }),
     onClose: () => setMobileMenu(false),
   };
   return (
@@ -277,18 +246,18 @@ export default function LearnerWorkspace({
         Skip to content
       </a>
       <aside className="sticky top-0 hidden h-screen flex-col border-r bg-card lg:flex">
-        <WorkspaceNavigation {...navigationProps} />
+        <WorkspaceNavigation {...navigation} />
       </aside>
       <Dialog open={mobileMenu} onOpenChange={setMobileMenu}>
         <DialogContent
           className="left-0 top-0 flex h-dvh w-[280px] max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none p-0 sm:max-w-[280px]"
           showCloseButton={false}
         >
-          <DialogTitle className="sr-only">Workspace navigation</DialogTitle>
+          <DialogTitle className="sr-only">Navigation</DialogTitle>
           <DialogDescription className="sr-only">
-            Navigate your tasks, courses, and projects.
+            Choose a page or area.
           </DialogDescription>
-          <WorkspaceNavigation {...navigationProps} />
+          <WorkspaceNavigation {...navigation} />
         </DialogContent>
       </Dialog>
       <div className="min-w-0">
@@ -304,7 +273,7 @@ export default function LearnerWorkspace({
               <Menu />
             </Button>
             <span className="truncate text-xs font-medium">
-              {selectedArea?.name ?? viewLabels[view]}
+              {view === "tasks" && activeArea ? activeArea.name : viewLabels[view]}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -315,13 +284,10 @@ export default function LearnerWorkspace({
                   ref={search}
                   aria-label="Search tasks"
                   placeholder="Search tasks…"
-                  className="h-8 border-transparent bg-muted/70 pl-9 pr-10 text-xs shadow-none"
+                  className="h-8 bg-muted/70 pl-9 text-xs"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
-                <kbd className="pointer-events-none absolute right-2 top-2 text-[10px] text-muted-foreground">
-                  ⌘ K
-                </kbd>
               </div>
             )}
             <ThemeControl />
@@ -331,53 +297,38 @@ export default function LearnerWorkspace({
           id="main"
           className="mx-auto max-w-[1500px] px-5 py-7 sm:px-9 sm:py-9"
         >
-          <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="mb-2 text-xs text-muted-foreground">{dateLabel}</p>
+              <p className="mb-2 text-xs text-muted-foreground">
+                {today
+                  ? new Date(today + "T12:00:00").toLocaleDateString(
+                      undefined,
+                      { weekday: "long", month: "long", day: "numeric" },
+                    )
+                  : ""}
+              </p>
               <h1 className="text-[28px] font-semibold leading-tight tracking-[-1px] sm:text-[32px]">
-                {view === "today"
-                  ? "My day"
-                  : (selectedArea?.name ?? viewLabels[view])}
+                {view === "tasks" && activeArea ? activeArea.name : viewLabels[view]}
               </h1>
             </div>
-            <div
-              className={cn(
-                "flex items-center gap-2",
-                ["calendar", "tags", "settings"].includes(view) && "hidden",
-              )}
-            >
-              {selectedArea ? (
-                <Button
-                  variant="outline"
-                  disabled={!ready || busy}
-                  onClick={() =>
-                    openEditor({ type: "course", course: selectedArea })
-                  }
-                >
-                  <Pencil />
-                  Edit area
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  disabled={!ready || busy}
-                  onClick={() => openEditor({ type: "course" })}
-                >
-                  <Plus />
-                  New area
-                </Button>
-              )}
+            {isTaskView && (
+              <div className="flex flex-wrap items-center gap-3">
+                {view === "today" && <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  Area
+                  <select aria-label="My day area" className="h-9 max-w-52 rounded-md border bg-card px-3 text-sm text-foreground" value={activeArea?.id ?? ""} onChange={(e) => setTag(e.target.value || null)} disabled={!ready || busy}>
+                    <option value="">All areas</option>
+                    {areas.filter((tag) => !tag.deletedAt).map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
+                  </select>
+                </label>}
               <Button
                 disabled={!ready || busy}
                 onClick={() => openEditor({ type: "task" })}
               >
                 <Plus />
                 New task
-                <span className="ml-2 hidden rounded border border-primary-foreground/25 px-1 text-[10px] opacity-70 sm:inline">
-                  N
-                </span>
               </Button>
-            </div>
+              </div>
+            )}
           </div>
           {notice && (
             <div
@@ -407,642 +358,307 @@ export default function LearnerWorkspace({
             </div>
           )}
           {loading ? (
-            <div aria-label="Loading workspace" className="space-y-5">
-              <div className="grid grid-cols-3 gap-4">
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-              </div>
-              <Skeleton className="h-72" />
-            </div>
+            <Skeleton className="h-72" />
           ) : loadError ? (
-            <div role="alert" className="surface p-8">
+            <section role="alert" className="surface p-8">
               <Database className="mb-3 text-destructive" />
-              <h2 className="font-semibold">
-                Your workspace couldn’t be opened
-              </h2>
+              <h2 className="font-semibold">Your planner couldn’t be opened</h2>
               <p className="my-3 text-sm text-muted-foreground">{loadError}</p>
               <Button onClick={refresh}>Try again</Button>
-            </div>
+            </section>
           ) : (
-            <>
-              {view === "today" && (
-                <div className="mb-7 grid gap-4 sm:grid-cols-3">
-                  <Metric
-                    icon={ListTodo}
-                    label="ON YOUR RADAR"
-                    value={String(dayPending.length)}
-                    detail="Due, in progress, or without a date"
-                  />
-                  <Metric
-                    icon={Clock3}
-                    label="ESTIMATED EFFORT"
-                    value={duration(totalEffort)}
-                    detail="For the tasks on your radar"
-                  />
-                  <Metric
-                    icon={CheckCheck}
-                    label="SMALL WINS"
-                    value={String(completed.length)}
-                    detail={`Completed across ${courses.length} active areas`}
-                  />
-                </div>
-              )}
-              {isTaskView && (
-                <div
-                  className={cn(
-                    "grid items-start gap-6",
-                    view === "today" && "xl:grid-cols-[minmax(0,1fr)_290px]",
-                  )}
-                >
-                  <section
-                    className="surface overflow-hidden"
-                    aria-labelledby="task-list-heading"
+            data && (
+              <>
+                {view === "today" && (
+                  <>
+                    <TaskCapture
+                      tags={tags}
+                      defaultTag={defaultTag}
+                      onSettings={() => navigate("settings")}
+                      onSave={(inputs) =>
+                        commit(
+                          () => storage().saveTasks(inputs),
+                          "Tasks added.",
+                        )
+                      }
+                    />
+                    <Planner
+                      onApply={(w, notice) => {
+                        setData(w);
+                        setNotice(notice);
+                      }}
+                    />
+                  </>
+                )}
+                {isTaskView && (
+                  <div
+                    className={
+                      view === "today"
+                        ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]"
+                        : ""
+                    }
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <h2
-                          id="task-list-heading"
-                          className="text-sm font-semibold"
-                        >
-                          {view === "today"
-                            ? "Your focus list"
-                            : selectedArea
-                              ? "Tasks in this area"
-                              : "Your tasks"}
-                        </h2>
-                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {visible.length}
-                        </span>
-                      </div>
-                      <select
-                        className="rounded-md border bg-card px-2 py-1 text-xs outline-none"
-                        aria-label="Task status filter"
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                      >
-                        <option value="active">Active tasks</option>
-                        <option value="all">All statuses</option>
-                        <option value="done">Completed</option>
-                      </select>
-                    </div>
-                    <div
-                      className="flex flex-wrap gap-1 border-b px-4 py-3"
-                      role="group"
-                      aria-label="Tag filter"
-                    >
-                      {[
-                        { id: "all", name: "All tags", icon: "hash" },
-                        ...(data?.tags.filter((t) => !t.deletedAt) ?? []),
-                      ].map((tag) => (
-                        <button
-                          key={tag.id}
-                          aria-pressed={category === tag.id}
-                          className={cn(
-                            "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs",
-                            category === tag.id
-                              ? "bg-accent font-medium text-primary"
-                              : "text-muted-foreground hover:bg-muted",
-                          )}
-                          onClick={() => setCategory(tag.id)}
-                        >
-                          {tag.id !== "all" && (
-                            <TagIcon icon={tag.icon} className="size-3" />
-                          )}
-                          {tag.name}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="px-4 py-3 sm:hidden">
-                      <Input
-                        aria-label="Search tasks on mobile"
-                        placeholder="Search tasks…"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                      />
-                    </div>
-                    {visible.length ? (
-                      <ul className="divide-y">
-                        {visible.map((task) => (
-                          <TaskRow
-                            key={task.id}
-                            task={task}
-                            tags={data?.tags ?? []}
-                            course={data?.courses.find(
-                              (c) => c.id === task.courseId,
-                            )}
-                            today={today}
-                            busy={busy}
-                            onEdit={() => openEditor({ type: "task", task })}
-                            onComplete={() =>
-                              act(
-                                () =>
-                                  storage().saveTask({
-                                    ...taskInput(task),
-                                    status:
-                                      task.status === "done" ? "todo" : "done",
-                                  }),
-                                task.status === "done"
-                                  ? "Task reopened."
-                                  : "Task completed.",
-                              )
-                            }
-                            onTrash={() =>
-                              act(
-                                () =>
-                                  storage().setDeleted("task", task.id, true),
-                                "Task moved to Trash. You can restore it anytime.",
-                              )
-                            }
-                          />
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="flex flex-col items-center px-6 py-14 text-center">
-                        <span className="mb-4 rounded-2xl bg-accent p-3 text-primary">
-                          <Sparkles className="size-6" />
-                        </span>
-                        <h3 className="font-medium">
-                          {query || category !== "all" || filter === "done"
-                            ? "No tasks match this view"
-                            : view === "today" && tasks.length
-                              ? "No tasks due"
-                              : "No tasks yet"}
-                        </h3>
-                        <p className="mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">
-                          {query || category !== "all" || filter === "done"
-                            ? "Try another filter, or clear your search."
-                            : view === "today" && tasks.length
-                              ? "No active tasks are due or in progress. Explore all tasks to see what’s ahead."
-                              : "Add a task to get started."}
-                        </p>
-                        <Button
-                          className="mt-5"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            query || category !== "all" || filter === "done"
-                              ? (setQuery(""),
-                                setCategory("all"),
-                                setFilter("active"))
-                              : view === "today" && tasks.length
-                                ? navigate("tasks")
-                                : openEditor({ type: "task" })
-                          }
-                        >
-                          {query || category !== "all" || filter === "done"
-                            ? "Reset filters"
-                            : view === "today" && tasks.length
-                              ? "See all tasks"
-                              : "Add your first task"}
-                          <ArrowRight />
-                        </Button>
-                      </div>
-                    )}
-                    <button
-                      className="flex w-full items-center gap-2 border-t px-6 py-4 text-xs text-muted-foreground hover:bg-muted/40 hover:text-primary disabled:opacity-50"
-                      disabled={busy}
-                      onClick={() => openEditor({ type: "task" })}
-                    >
-                      <Plus className="size-3.5" />
-                      Add a task
-                      <span className="ml-auto text-[10px]"></span>
-                    </button>
-                  </section>
-                  {view === "today" && (
-                    <aside
-                      className="space-y-5"
-                      aria-label="Workspace overview"
-                    >
-                      <section className="surface p-5">
-                        <div className="flex items-center justify-between">
+                    <section className="surface overflow-hidden">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+                        <div>
                           <h2 className="text-sm font-semibold">
-                            The bigger picture
+                            {view === "today"
+                              ? "Due & in progress"
+                              : activeArea
+                                ? `Tasks in ${activeArea.name}`
+                                : "Your tasks"}
                           </h2>
-                          <Compass className="size-4 text-muted-foreground" />
+                          {view === "today" && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Due today, overdue, in progress, or scheduled
+                              today.
+                            </p>
+                          )}
                         </div>
-                        <div className="my-6 flex items-center gap-5">
-                          <div
-                            className="relative flex size-20 shrink-0 items-center justify-center rounded-full"
-                            role="img"
-                            aria-label={`${progress}% of tasks completed`}
-                            style={{
-                              background: `conic-gradient(var(--primary) ${progress}%, var(--muted) 0)`,
-                            }}
+                        <div className="flex flex-wrap gap-2">
+                          {view === "tasks" && (
+                            <select
+                              aria-label="Task status filter"
+                              className="h-8 rounded-md border bg-card px-2 text-xs"
+                              value={filter}
+                              onChange={(e) => setFilter(e.target.value)}
+                            >
+                              <option value="active">Active tasks</option>
+                              <option value="all">All tasks</option>
+                              <option value="done">Completed</option>
+                            </select>
+                          )}
+                          {view === "tasks" && <select
+                            aria-label="Task area filter"
+                            className="h-8 max-w-44 rounded-md border bg-card px-2 text-xs"
+                            value={tag ?? ""}
+                            onChange={(e) => setTag(e.target.value || null)}
                           >
-                            <div className="absolute inset-[6px] rounded-full bg-card" />
-                            <span className="relative text-lg font-semibold tracking-tight">
-                              {progress}
-                              <span className="text-xs text-muted-foreground">
-                                %
-                              </span>
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              Task completion
-                            </p>
-                            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                              {completed.length} of {tasks.length} tasks
-                              completed.
-                              <br />
-                            </p>
-                          </div>
+                            <option value="">All areas</option>
+                            {areas
+                              .filter((t) => !t.deletedAt)
+                              .map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name}
+                                </option>
+                              ))}
+                          </select>}
+                          <Input
+                            className="h-8 w-full text-xs sm:hidden"
+                            aria-label="Search tasks on mobile"
+                            placeholder="Search tasks…"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                          />
                         </div>
-                        <Separator />
-                        <div className="mt-4 space-y-3">
-                          {[
-                            [
-                              BookOpen,
-                              "Learning",
-                              pending.filter((t) =>
-                                ["study", "assignment"].includes(t.kind),
-                              ).length,
-                            ],
-                            [
-                              Code2,
-                              "Building",
-                              pending.filter((t) => t.kind === "coding").length,
-                            ],
-                            [
-                              Compass,
-                              "Career",
-                              pending.filter((t) => t.kind === "career").length,
-                            ],
-                          ].map(([Icon, label, count]) => {
-                            const Glyph = Icon as typeof BookOpen;
-                            return (
-                              <div
-                                key={String(label)}
-                                className="flex items-center gap-2.5 text-xs"
-                              >
-                                <Glyph className="size-3.5 text-muted-foreground" />
-                                <span>{String(label)}</span>
-                                <span className="ml-auto text-muted-foreground">
-                                  {String(count)} active
-                                </span>
-                              </div>
-                            );
-                          })}
+                      </div>
+                      {visible.length ? (
+                        <ul className="divide-y">
+                          {visible.map((task) => (
+                            <TaskRow
+                              key={task.id}
+                              task={task}
+                              tags={tags}
+                              today={today}
+                              busy={busy}
+                              onEdit={() => openEditor({ type: "task", task })}
+                              onComplete={() =>
+                                act(
+                                  () =>
+                                    storage().saveTask({
+                                      ...taskInput(task),
+                                      status:
+                                        task.status === "done"
+                                          ? "todo"
+                                          : "done",
+                                    }),
+                                  task.status === "done"
+                                    ? "Task reopened."
+                                    : "Task completed.",
+                                )
+                              }
+                              onTrash={() =>
+                                act(
+                                  () =>
+                                    storage().setDeleted("task", task.id, true),
+                                  "Task moved to Trash.",
+                                )
+                              }
+                            />
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {query
+                              ? "No tasks match your search."
+                              : view === "today"
+                                ? "Nothing due or in progress today."
+                                : "No tasks here yet."}
+                          </p>
                         </div>
-                      </section>
+                      )}
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => openEditor({ type: "task" })}
+                        >
+                          <Plus />
+                          Add a task
+                        </Button>
+                        {view === "today" && (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => navigate("tasks", activeArea?.id ?? null)}
+                          >
+                            View all {areaPending.length} active tasks
+                          </Button>
+                        )}
+                      </div>
+                    </section>
+                    {view === "today" && (
                       <section className="surface p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                          <h2 className="text-sm font-semibold">Coming up</h2>
-                          <CalendarDays className="size-4 text-muted-foreground" />
-                        </div>
-                        {upcoming.length ? (
-                          <div className="space-y-4">
-                            {upcoming.map((task) => (
+                        <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+                          <CalendarDays className="size-4" />
+                          Today’s schedule
+                        </h2>
+                        {areaEvents.length ? (
+                          <div className="space-y-2">
+                            {areaEvents.map((e) => (
                               <button
-                                key={task.id}
-                                className="group flex w-full gap-3 text-left"
+                                key={e.id}
                                 onClick={() =>
-                                  openEditor({ type: "task", task })
+                                  openEditor({ type: "event", event: e })
                                 }
+                                className="flex w-full items-center gap-4 rounded-lg bg-muted/50 px-3 py-3 text-left text-sm"
                               >
-                                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                  <Flag className="size-3.5" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-xs font-medium leading-relaxed group-hover:text-primary">
-                                    {task.title}
-                                  </p>
-                                  <p className="mt-1 text-[10px] text-muted-foreground">
-                                    {formatDate(task.dueDate!)} ·{" "}
-                                    {duration(task.estimateMinutes)}
-                                  </p>
-                                </div>
+                                <span className="w-24 shrink-0 text-xs text-muted-foreground">
+                                  {e.allDay
+                                    ? "All day"
+                                    : new Date(e.start).toLocaleTimeString(
+                                        undefined,
+                                        { hour: "numeric", minute: "2-digit" },
+                                      )}
+                                </span>
+                                <span className="truncate">{e.title}</span>
                               </button>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-                            No upcoming deadlines.
+                          <p className="text-sm text-muted-foreground">
+                            No events planned today.
                           </p>
                         )}
-                      </section>{" "}
-                    </aside>
-                  )}
-                </div>
-              )}
-              {view === "areas" && (
-                <section
-                  aria-label="Courses and projects"
-                  className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3"
-                >
-                  {courses.map((course) => {
-                    const Icon = areaIcons[course.kind];
-                    const areaTasks = tasks.filter(
-                      (t) => t.courseId === course.id,
-                    );
-                    const done = areaTasks.filter(
-                      (t) => t.status === "done",
-                    ).length;
-                    const percentage = areaTasks.length
-                      ? Math.round((done / areaTasks.length) * 100)
-                      : 0;
-                    return (
-                      <article
-                        key={course.id}
-                        className={`surface area-${course.color} flex flex-col p-6`}
-                      >
-                        <div className="mb-5 flex items-start justify-between">
-                          <span
-                            className="flex size-11 items-center justify-center rounded-xl"
-                            style={{
-                              background: "var(--area-soft)",
-                              color: "var(--area-color)",
-                            }}
-                          >
-                            <Icon className="size-5" />
-                          </span>
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] font-normal"
-                          >
-                            {areaLabels[course.kind]}
-                          </Badge>
-                        </div>
-                        <p className="eyebrow">
-                          {course.code || "YOUR NEXT CHAPTER"}
-                        </p>
-                        <button
-                          className="mt-2 text-left text-lg font-semibold tracking-tight hover:text-primary"
-                          onClick={() => navigate("tasks", course.id)}
-                        >
-                          {course.name}
-                        </button>
-                        <p className="mb-6 mt-2 line-clamp-2 min-h-10 text-xs leading-relaxed text-muted-foreground">
-                          {course.description ||
-                            "Every small step counts. Add a task to get started."}
-                        </p>
-                        <div className="mt-auto">
-                          <div className="mb-2 flex justify-between text-[10px] text-muted-foreground">
-                            <span>
-                              {done} of {areaTasks.length} tasks complete
-                            </span>
-                            <span>{percentage}%</span>
-                          </div>
-                          <div className="h-1 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${percentage}%`,
-                                background: "var(--area-color)",
-                              }}
-                            />
-                          </div>
-                          <div className="mt-5 flex items-center justify-between">
-                            <button
-                              className="flex items-center gap-1 text-xs font-medium text-primary"
-                              onClick={() => navigate("tasks", course.id)}
-                            >
-                              View tasks
-                              <ArrowRight className="size-3.5" />
-                            </button>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={`Edit ${course.name}`}
-                                disabled={busy}
-                                onClick={() =>
-                                  openEditor({ type: "course", course })
-                                }
-                              >
-                                <Pencil className="size-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={`Move ${course.name} to Trash`}
-                                disabled={busy}
-                                onClick={() =>
-                                  act(
-                                    () =>
-                                      storage().setDeleted(
-                                        "course",
-                                        course.id,
-                                        true,
-                                      ),
-                                    "Area moved to Trash. Its tasks are preserved.",
-                                  )
-                                }
-                              >
-                                <Trash2 className="size-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                  <button
-                    className="flex min-h-72 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card/40 p-7 text-center hover:border-primary/50 hover:bg-accent/20 disabled:opacity-50"
-                    disabled={busy}
-                    onClick={() => openEditor({ type: "course" })}
-                  >
-                    <span className="rounded-full bg-accent p-3 text-primary">
-                      <Plus className="size-5" />
-                    </span>
-                    <span className="text-sm font-medium">
-                      Make space for a new goal
-                    </span>
-                    <span className="max-w-52 text-xs leading-relaxed text-muted-foreground">
-                      Add a course, a coding project, or your next career
-                      milestone.
-                    </span>
-                  </button>
-                </section>
-              )}
-              {view === "trash" && (
-                <section
-                  className="surface divide-y"
-                  aria-label="Recoverable items"
-                >
-                  {!trashCount && (
-                    <div className="px-6 py-16 text-center">
-                      <Trash2 className="mx-auto mb-4 size-7 text-muted-foreground" />
-                      <h2 className="text-sm font-medium">Nothing in Trash</h2>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Removed tasks and areas can be restored from here.
-                      </p>
-                    </div>
-                  )}
-                  {data?.courses
-                    .filter((c) => c.deletedAt)
-                    .map((course) => (
-                      <div
-                        key={course.id}
-                        className="flex items-center justify-between gap-4 px-6 py-4"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{course.name}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {areaLabels[course.kind]} · Tasks and assignments
-                            preserved
-                          </p>
-                        </div>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() =>
-                            act(
-                              () =>
-                                storage().setDeleted(
-                                  "course",
-                                  course.id,
-                                  false,
-                                ),
-                              "Area restored.",
-                            )
-                          }
+                          variant="link"
+                          className="mt-2 h-auto px-0 text-xs"
+                          onClick={() => navigate("calendar")}
                         >
-                          <RotateCcw />
-                          Restore<span className="sr-only"> {course.name}</span>
+                          Open calendar
                         </Button>
-                      </div>
-                    ))}
-                  {data?.tasks
-                    .filter((t) => t.deletedAt)
-                    .map((task) => (
-                      <div
-                        key={task.id}
-                        className="flex items-center justify-between gap-4 px-6 py-4"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{task.title}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {taskLabels[task.kind]} ·{" "}
-                            {duration(task.estimateMinutes)}
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() =>
-                            act(
-                              () =>
-                                storage().setDeleted("task", task.id, false),
-                              "Task restored.",
-                            )
-                          }
-                        >
-                          <RotateCcw />
-                          Restore<span className="sr-only"> {task.title}</span>
-                        </Button>
-                      </div>
-                    ))}
-                  {data?.events
-                    .filter((event) => event.deletedAt)
-                    .map((event) => (
-                      <div
-                        key={event.id}
-                        className="flex items-center justify-between gap-4 px-6 py-4"
-                      >
-                        <div>
-                          <p className="text-sm font-medium">{event.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Calendar event
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() =>
-                            act(
-                              () =>
-                                storage().setDeleted("event", event.id, false),
-                              "Event restored.",
-                            )
-                          }
-                        >
-                          <RotateCcw />
-                          Restore<span className="sr-only"> {event.title}</span>
-                        </Button>
-                      </div>
-                    ))}
-                </section>
-              )}
-              {view === "settings" && data && (
-                <WorkspaceSettings
-                  workspace={data}
-                  onNotice={setNotice}
-                  onError={setError}
-                  onExample={setData}
-                />
-              )}
-              {view === "calendar" && data && (
-                <CalendarView
-                  workspace={data}
-                  busy={busy}
-                  onNew={(selection) =>
-                    openEditor({ type: "event", selection })
-                  }
-                  onEdit={(event) => openEditor({ type: "event", event })}
-                  onTask={(id) => {
-                    const task = data.tasks.find((t) => t.id === id);
-                    if (task) openEditor({ type: "task", task });
-                  }}
-                  onMove={async (input) => {
-                    try {
-                      await commit(
-                        () => storage().saveEvent(input),
-                        "Event rescheduled.",
-                      );
-                    } catch (error) {
-                      setError(errorMessage(error));
-                      throw error;
+                      </section>
+                    )}
+                  </div>
+                )}
+                {view === "areas" && <AreaManager areas={areas} tags={tags} tasks={tasks} busy={busy} onOpen={(id) => navigate("tasks", id)} onSave={(input) => commit(() => storage().saveArea(input), "Area saved.")} onArchive={(id) => act(() => storage().setDeleted("area", id, true), "Area moved to Trash.")} />}
+                {view === "tags" && (
+                  <TagManager
+                    key={view}
+                    tags={tags}
+                    busy={busy}
+                    onSave={(input) =>
+                      commit(() => storage().saveTag(input), "Tag saved.")
                     }
-                  }}
-                  onExport={async () => {
-                    try {
-                      await exportCalendar(data);
-                      setNotice(
-                        isDesktop()
-                          ? "Calendar saved to Downloads."
-                          : "Calendar exported.",
-                      );
-                    } catch (e) {
-                      setError(errorMessage(e));
+                    onArchive={(id) =>
+                      act(
+                        () => storage().setDeleted("tag", id, true),
+                        "Tag moved to Trash.",
+                      )
                     }
-                  }}
-                />
-              )}
-              {view === "tags" && data && (
-                <TagManager
-                  onDelete={(id) =>
-                    commit(() => storage().deleteTag(id), "Tag deleted.")
-                  }
-                  tags={data.tags}
-                  busy={busy}
-                  onSave={(input) =>
-                    commit(() => storage().saveTag(input), "Tag saved.")
-                  }
-                  onArchive={(id) =>
-                    act(
-                      () => storage().setDeleted("tag", id, true),
-                      "Tag archived.",
-                    )
-                  }
-                  onRestore={(id) =>
-                    act(
-                      () => storage().setDeleted("tag", id, false),
-                      "Tag restored.",
-                    )
-                  }
-                />
-              )}
-            </>
+                    onRestore={(id) =>
+                      act(
+                        () => storage().setDeleted("tag", id, false),
+                        "Tag restored.",
+                      )
+                    }
+                    onDelete={(id) =>
+                      commit(() => storage().deleteTag(id), "Tag deleted.")
+                    }
+                  />
+                )}
+                {view === "trash" && (
+                  <TrashView
+                    workspace={data}
+                    busy={busy}
+                    onRestore={(entity, id) =>
+                      commit(
+                        () => storage().setDeleted(entity, id, false),
+                        "Item restored.",
+                      )
+                    }
+                    onDelete={(entity, id) =>
+                      commit(
+                        () => storage().purgeRecord(entity, id),
+                        "Item permanently deleted.",
+                      )
+                    }
+                  />
+                )}
+                {view === "settings" && (
+                  <WorkspaceSettings
+                    workspace={data}
+                    onNotice={setNotice}
+                    onError={setError}
+                    onExample={setData}
+                  />
+                )}
+                {view === "calendar" && (
+                  <CalendarView
+                    workspace={data}
+                    busy={busy}
+                    onNew={(selection) =>
+                      openEditor({ type: "event", selection })
+                    }
+                    onEdit={(event) => openEditor({ type: "event", event })}
+                    onTask={(id) => {
+                      const task = data.tasks.find((t) => t.id === id);
+                      if (task) openEditor({ type: "task", task });
+                    }}
+                    onMove={async (input) => {
+                      try {
+                        await commit(
+                          () => storage().saveEvent(input),
+                          "Event rescheduled.",
+                        );
+                      } catch (error) {
+                        setError(message(error));
+                        throw error;
+                      }
+                    }}
+                    onExport={async () => {
+                      try {
+                        await exportCalendar(data);
+                        setNotice(
+                          isDesktop()
+                            ? "Calendar saved to Downloads."
+                            : "Calendar exported.",
+                        );
+                      } catch (e) {
+                        setError(message(e));
+                      }
+                    }}
+                  />
+                )}
+              </>
+            )
           )}
         </main>
       </div>
       <Dialog
-        open={Boolean(editor)}
+        open={!!editor}
         onOpenChange={(open) => {
           if (!open && !busy) setEditor(null);
         }}
@@ -1052,30 +668,25 @@ export default function LearnerWorkspace({
           showCloseButton={!busy}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            if (editorTrigger.current?.isConnected)
-              editorTrigger.current.focus();
+            if (trigger.current?.isConnected) trigger.current.focus();
           }}
-          onEscapeKeyDown={(event) => {
-            if (busy) event.preventDefault();
+          onEscapeKeyDown={(e) => {
+            if (busy) e.preventDefault();
           }}
-          onInteractOutside={(event) => {
-            if (busy) event.preventDefault();
+          onInteractOutside={(e) => {
+            if (busy) e.preventDefault();
           }}
         >
           {editor?.type === "task" && (
             <TaskForm
-              key={editor.task?.id ?? "new-task"}
+              key={editor.task?.id ?? "new"}
               task={editor.task}
-              defaultCourse={area ?? undefined}
-              courses={data?.courses ?? []}
-              tags={data?.tags ?? []}
+              defaultTag={defaultTag}
+              tags={tags}
               busy={busy}
               onCancel={() => setEditor(null)}
               onSave={async (input) => {
-                await commit(
-                  () => storage().saveTask(input),
-                  input.id ? "Task updated." : "Task added.",
-                );
+                await commit(() => storage().saveTask(input), "Task saved.");
                 setEditor(null);
               }}
             />
@@ -1083,13 +694,11 @@ export default function LearnerWorkspace({
           {editor?.type === "event" && (
             <EventForm
               key={
-                editor.event?.id ??
-                JSON.stringify(editor.selection) ??
-                "new-event"
+                editor.event?.id ?? JSON.stringify(editor.selection) ?? "new"
               }
               event={editor.event}
               selection={editor.selection}
-              tags={data?.tags ?? []}
+              tags={tags}
               tasks={data?.tasks ?? []}
               busy={busy}
               onCancel={() => setEditor(null)}
@@ -1103,21 +712,6 @@ export default function LearnerWorkspace({
                     () => storage().setDeleted("event", editor.event!.id, true),
                     "Event moved to Trash.",
                   );
-                setEditor(null);
-              }}
-            />
-          )}
-          {editor?.type === "course" && (
-            <CourseForm
-              key={editor.course?.id ?? "new-course"}
-              course={editor.course}
-              busy={busy}
-              onCancel={() => setEditor(null)}
-              onSave={async (input) => {
-                await commit(
-                  () => storage().saveCourse(input),
-                  input.id ? "Area updated." : "Area created.",
-                );
                 setEditor(null);
               }}
             />

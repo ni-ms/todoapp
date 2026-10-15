@@ -579,7 +579,7 @@ fn drive_backup(
             .and_then(|v| v["id"].as_str())
             .map(str::to_owned);
     }
-    let payload=json!({"format":"daymark-workspace","version":2,"exportedAt":Utc::now().to_rfc3339(),"courses":workspace.courses,"tasks":workspace.tasks,"events":workspace.events,"tags":workspace.tags}).to_string();
+    let payload=json!({"format":"daymark-workspace","version":2,"exportedAt":Utc::now().to_rfc3339(),"areas":workspace.areas,"courses":workspace.courses,"tasks":workspace.tasks,"events":workspace.events,"tags":workspace.tags}).to_string();
     let mut response = if let Some(id) = &id {
         Some(
             client

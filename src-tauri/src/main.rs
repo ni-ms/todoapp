@@ -1,12 +1,16 @@
 // Prevents an additional console window on Windows in release.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod areas;
 mod backup;
 mod calendar;
 mod google;
 mod ical;
+mod local_ai;
+mod planner;
 mod services;
 mod todo_utils;
+mod trash;
 mod workspace;
 
 use std::sync::{Arc, Mutex};
@@ -30,6 +34,10 @@ async fn with_store<T: Send + 'static>(
 #[tauri::command]
 async fn load_workspace(db: State<'_, Database>) -> Result<Workspace, String> {
     with_store(db.inner().clone(), |store| store.snapshot()).await
+}
+#[tauri::command]
+async fn save_area(db: State<'_, Database>, input: areas::AreaInput) -> Result<Workspace, String> {
+    with_store(db.inner().clone(), move |store| store.save_area(input)).await
 }
 #[tauri::command]
 async fn save_course(db: State<'_, Database>, input: CourseInput) -> Result<Workspace, String> {
@@ -66,7 +74,7 @@ async fn export_workspace(
         let document = serde_json::json!({
             "format": "daymark-workspace", "version": 2,
             "exportedAt": chrono::Utc::now().to_rfc3339(),
-            "courses": snapshot.courses, "tasks": snapshot.tasks, "tags":snapshot.tags, "events":snapshot.events,
+            "areas": snapshot.areas, "courses": snapshot.courses, "tasks": snapshot.tasks, "tags":snapshot.tags, "events":snapshot.events,
         });
         let destination = downloads.join(filename);
         let file = std::fs::OpenOptions::new()
@@ -81,6 +89,156 @@ async fn export_workspace(
         Ok(destination.to_string_lossy().to_string())
     })
     .await
+}
+#[tauri::command]
+async fn preview_plan(
+    db: State<'_, Database>,
+    pending: State<'_, planner::PendingPlan>,
+    options: planner::Options,
+) -> Result<planner::Proposal, String> {
+    let db = db.inner().clone();
+    let p = pending.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || planner::preview(&db, &p, options))
+        .await
+        .map_err(|_| "Planning interrupted.")?
+}
+#[tauri::command]
+async fn apply_plan(
+    db: State<'_, Database>,
+    pending: State<'_, planner::PendingPlan>,
+    id: String,
+) -> Result<Workspace, String> {
+    let db = db.inner().clone();
+    let p = pending.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || planner::apply(&db, &p, id))
+        .await
+        .map_err(|_| "Planning interrupted.")?
+}
+#[tauri::command]
+async fn plan_undo_available(db: State<'_, Database>) -> Result<bool, String> {
+    with_store(db.inner().clone(), |store| {
+        Ok(store
+            .preference("last_plan")
+            .and_then(|raw| serde_json::from_str::<Vec<(String, String)>>(&raw).ok())
+            .is_some_and(|v| !v.is_empty()))
+    })
+    .await
+}
+#[tauri::command]
+async fn undo_plan(db: State<'_, Database>) -> Result<Workspace, String> {
+    with_store(db.inner().clone(), planner::undo).await
+}
+#[tauri::command]
+async fn start_local_ai(
+    app: tauri::AppHandle,
+    db: State<'_, Database>,
+    services: State<'_, local_ai::ServiceState>,
+) -> Result<local_ai::LocalStatus, String> {
+    let db = db.inner().clone();
+    let services = services.inner().clone();
+    let model = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "App data unavailable.")?
+        .join("models/ggml-base.en.bin");
+    tauri::async_runtime::spawn_blocking(move || local_ai::start_services(&db, &services, model))
+        .await
+        .map_err(|_| "Local service startup interrupted.")?
+}
+#[tauri::command]
+async fn stop_local_ai(services: State<'_, local_ai::ServiceState>) -> Result<(), String> {
+    local_ai::stop_services(services.inner())
+}
+#[tauri::command]
+async fn local_ai_status(db: State<'_, Database>) -> Result<local_ai::LocalStatus, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || local_ai::status(&db))
+        .await
+        .map_err(|_| "Local AI check interrupted.")?
+}
+#[tauri::command]
+async fn configure_local_ai(db: State<'_, Database>, model: String) -> Result<(), String> {
+    local_ai::configure(db.inner(), model)
+}
+#[tauri::command]
+async fn pick_context(
+    app: tauri::AppHandle,
+    cache: State<'_, local_ai::ContextStore>,
+    folder: bool,
+) -> Result<local_ai::ContextResult, String> {
+    let cache = cache.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri_plugin_dialog::DialogExt;
+        let paths = if folder {
+            app.dialog()
+                .file()
+                .set_title("Choose a folder for local AI context")
+                .blocking_pick_folder()
+                .into_iter()
+                .collect::<Vec<_>>()
+        } else {
+            app.dialog()
+                .file()
+                .set_title("Choose text or source files for local AI context")
+                .blocking_pick_files()
+                .unwrap_or_default()
+        };
+        let paths = paths
+            .into_iter()
+            .map(|p| {
+                p.into_path()
+                    .map_err(|_| "Choose local files or folders.".to_string())
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        local_ai::collect(paths, &cache)
+    })
+    .await
+    .map_err(|_| "Context selection interrupted.")?
+}
+#[tauri::command]
+async fn remove_context(
+    cache: State<'_, local_ai::ContextStore>,
+    id: String,
+) -> Result<(), String> {
+    cache
+        .lock()
+        .map_err(|_| "Context unavailable.")?
+        .remove(&id);
+    Ok(())
+}
+#[tauri::command]
+async fn extract_tasks(
+    db: State<'_, Database>,
+    cache: State<'_, local_ai::ContextStore>,
+    text: String,
+    context_ids: Vec<String>,
+    today: String,
+) -> Result<Vec<local_ai::Draft>, String> {
+    let db = db.inner().clone();
+    let cache = cache.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        local_ai::extract(&db, &cache, text, context_ids, today)
+    })
+    .await
+    .map_err(|_| "Local task capture interrupted.")?
+}
+#[tauri::command]
+async fn transcribe_audio(audio: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || local_ai::transcribe(audio))
+        .await
+        .map_err(|_| "Transcription interrupted.")?
+}
+#[tauri::command]
+async fn purge_record(
+    db: State<'_, Database>,
+    entity: String,
+    id: String,
+) -> Result<Workspace, String> {
+    with_store(db.inner().clone(), move |s| s.purge_record(&entity, &id)).await
+}
+#[tauri::command]
+async fn save_tasks(db: State<'_, Database>, inputs: Vec<TaskInput>) -> Result<Workspace, String> {
+    with_store(db.inner().clone(), move |s| s.save_tasks(inputs)).await
 }
 #[tauri::command]
 async fn delete_tag(db: State<'_, Database>, id: String) -> Result<Workspace, String> {
@@ -229,6 +387,9 @@ fn main() {
             let google_lock: google::GoogleLock = Arc::new(Mutex::new(()));
             let background_google = google_lock.clone();
             app.manage(google_lock);
+            app.manage(local_ai::ContextStore::default());
+            app.manage(local_ai::ServiceState::default());
+            app.manage(planner::PendingPlan::default());
             std::thread::Builder::new()
                 .name("daymark-backup".into())
                 .spawn(move || loop {
@@ -247,12 +408,27 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             load_workspace,
+            save_area,
             save_course,
             save_task,
             set_deleted,
             export_workspace,
             save_tag,
             delete_tag,
+            purge_record,
+            save_tasks,
+            preview_plan,
+            apply_plan,
+            undo_plan,
+            plan_undo_available,
+            start_local_ai,
+            stop_local_ai,
+            local_ai_status,
+            configure_local_ai,
+            pick_context,
+            remove_context,
+            extract_tasks,
+            transcribe_audio,
             save_event,
             export_calendar,
             backup_status,
@@ -260,6 +436,16 @@ fn main() {
             google_status,
             google_action
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running learner workspace");
+        .build(tauri::generate_context!())
+        .expect("error while building learner workspace")
+        .run(|app, event| {
+            if matches!(
+                event,
+                tauri::RunEvent::Exit | tauri::RunEvent::ExitRequested { .. }
+            ) {
+                if let Some(services) = app.try_state::<local_ai::ServiceState>() {
+                    let _ = local_ai::stop_services(services.inner());
+                }
+            }
+        });
 }
