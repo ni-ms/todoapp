@@ -1,0 +1,420 @@
+[
+  {
+    "name": "holdout deadline across spring DST",
+    "request": "Work on the essay by Tuesday at 11:30 am, for 75 minutes.",
+    "today": "2026-03-06",
+    "now": "2026-03-06T10:00:00-08:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Essay",
+        "description": "",
+        "priority": "medium",
+        "dueDate": "2026-03-10",
+        "estimateMinutes": 75,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": "2026-03-10T11:30:00-07:00",
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "essay"
+        ]
+      ],
+      "clarificationAnyOf": [],
+      "titleExcludes": []
+    }
+  },
+  {
+    "name": "holdout work date across fall DST",
+    "request": "Read on Sunday for 35 minutes.",
+    "today": "2026-10-30",
+    "now": "2026-10-30T10:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Read",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 35,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": "2026-11-01"
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "read"
+        ]
+      ],
+      "clarificationAnyOf": [],
+      "titleExcludes": []
+    }
+  },
+  {
+    "name": "holdout fixed afternoon block",
+    "request": "Study Friday from 2 pm to 3:15 pm for 75 minutes.",
+    "today": "2026-10-22",
+    "now": "2026-10-22T08:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Study",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 75,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": "2026-10-23T14:00:00-07:00",
+          "fixedEnd": "2026-10-23T15:15:00-07:00",
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": false,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "study"
+        ]
+      ],
+      "clarificationAnyOf": [],
+      "titleExcludes": []
+    }
+  },
+  {
+    "name": "holdout written effort and sessions",
+    "request": "Spend three hours on the lab, split into 45-minute sessions.",
+    "today": "2026-10-15",
+    "now": "2026-10-15T08:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Lab",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 180,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 45,
+          "preferredSessionMinutes": 45,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "lab"
+        ]
+      ],
+      "clarificationAnyOf": [],
+      "titleExcludes": []
+    }
+  },
+  {
+    "name": "holdout duration correction",
+    "request": "Study for 90 minutes. Actually, 35 minutes in one sitting.",
+    "today": "2026-10-15",
+    "now": "2026-10-15T08:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Study",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 35,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": false,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "study"
+        ]
+      ],
+      "titleExcludes": [
+        [
+          "90",
+          "ninety"
+        ]
+      ],
+      "clarificationAnyOf": []
+    }
+  },
+  {
+    "name": "holdout earlier evening cutoff",
+    "request": "Study for 50 minutes. Prefer evenings but never after 8 pm.",
+    "today": "2026-10-15",
+    "now": "2026-10-15T08:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Study",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 50,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [
+            {
+              "days": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "start": "00:00",
+              "end": "20:00"
+            }
+          ],
+          "preferredWindows": [
+            {
+              "days": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+              ],
+              "start": "18:00",
+              "end": "20:00"
+            }
+          ],
+          "unresolved": [],
+          "workDate": null
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "study"
+        ]
+      ],
+      "clarificationAnyOf": [],
+      "titleExcludes": []
+    }
+  },
+  {
+    "name": "holdout contradictory daily limits",
+    "request": "Study for 45 minutes, only after 10 pm and never after 7 pm.",
+    "today": "2026-10-15",
+    "now": "2026-10-15T08:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Study",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 45,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [
+            "The requested time limits conflict. Which limit should I use?"
+          ],
+          "workDate": null
+        }
+      }
+    ],
+    "calendarContext": [],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "study"
+        ]
+      ],
+      "clarificationAnyOf": [
+        [
+          "conflict",
+          "contradict",
+          "which"
+        ]
+      ],
+      "titleExcludes": []
+    }
+  },
+  {
+    "name": "holdout selected class resolves reference",
+    "request": "Study tomorrow after class for 40 minutes.",
+    "today": "2026-10-15",
+    "now": "2026-10-15T08:00:00-07:00",
+    "timeZone": "America/Los_Angeles",
+    "tasks": [
+      {
+        "title": "Study",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 40,
+        "tagIds": [],
+        "estimatedFields": [
+          "priority"
+        ],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": "2026-10-16T15:00:00-07:00",
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": "2026-10-16"
+        }
+      }
+    ],
+    "calendarContext": [
+      {
+        "id": "selected-class",
+        "title": "Data science class",
+        "start": "2026-10-16T14:00:00-07:00",
+        "end": "2026-10-16T15:00:00-07:00",
+        "allDay": false,
+        "timeZone": "America/Los_Angeles"
+      }
+    ],
+    "checks": {
+      "titleAnyOf": [
+        [
+          "study"
+        ]
+      ],
+      "clarificationAnyOf": [],
+      "titleExcludes": []
+    }
+  }
+]

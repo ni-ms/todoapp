@@ -3,6 +3,7 @@ import {
   pipeline,
   type AutomaticSpeechRecognitionPipeline,
 } from "@huggingface/transformers";
+import { isSpeechModel } from "./speech-model";
 import { validateSpeechSamples, validateTranscript } from "./speech-audio";
 import type { SpeechCommand, SpeechMessage } from "./speech-client";
 // A single WASM thread also works on Pages, without cross-origin isolation headers/WebGPU.
@@ -12,6 +13,7 @@ if (env.backends.onnx.wasm) {
   env.backends.onnx.wasm.proxy = false;
 }
 let transcriber: AutomaticSpeechRecognitionPipeline | undefined;
+let phonon: ((samples: Float32Array, progress: (text: string) => void) => Promise<string>) | undefined;
 let busy = false;
 const send = (message: SpeechMessage) => self.postMessage(message);
 self.onmessage = async ({ data }: MessageEvent<SpeechCommand>) => {
@@ -26,6 +28,11 @@ self.onmessage = async ({ data }: MessageEvent<SpeechCommand>) => {
   busy = true;
   try {
     if (data.type === "load") {
+      if (!isSpeechModel(data.model)) throw new Error("Unsupported speech model.");
+      if (data.model === "phonon-2") {
+        const { loadPhonon } = await import("./speech-phonon");
+        phonon = await loadPhonon((text) => send({ type: "progress", id: data.id, text }));
+      } else {
       transcriber ??= await pipeline(
         "automatic-speech-recognition",
         "Xenova/whisper-tiny",
@@ -48,11 +55,17 @@ self.onmessage = async ({ data }: MessageEvent<SpeechCommand>) => {
           },
         },
       );
+      }
       send({ type: "ready", id: data.id });
     } else if (data.type === "transcribe") {
-      if (!transcriber) throw new Error("Speech model not loaded.");
+      if (!transcriber && !phonon) throw new Error("Speech model not loaded.");
       validateSpeechSamples(data.samples);
-      const result = await transcriber(data.samples, {
+      if (phonon) {
+        const text = await phonon(data.samples, (text) => send({ type: "progress", id: data.id, text }));
+        send({ type: "result", id: data.id, text });
+        return;
+      }
+      const result = await transcriber!(data.samples, {
         chunk_length_s: 30,
         stride_length_s: 5,
         task: "transcribe",
@@ -71,7 +84,9 @@ self.onmessage = async ({ data }: MessageEvent<SpeechCommand>) => {
       id: data.id,
       message:
         data.type === "load"
-          ? "Could not load the speech model. Check the model download, browser storage, and WebAssembly support. Retry when connected."
+          ? data.model === "phonon-2"
+            ? "Could not load Phonon 2. Check your connection, browser storage, and free memory. Retry, or select the smaller Whisper Tiny model."
+            : "Could not load the speech model. Check the model download, browser storage, and WebAssembly support. Retry when connected."
           : "Could not transcribe this recording. Try a shorter, clearer recording, or type your request.",
     });
   } finally {

@@ -1,3 +1,4 @@
+import { scheduleTasks } from "./schedule-engine";
 import { Temporal } from "temporal-polyfill";
 import { invoke } from "@tauri-apps/api/core";
 import { isDesktop, previewTransaction } from "./storage";
@@ -85,89 +86,17 @@ export function plan(
             ]
           : [Date.parse(e.start), Date.parse(e.end)],
       )
-      .filter(([a, b]) => a < end && b > start)
+      .filter(([a, b]) => a < end && b + o.breakMinutes * minute > start)
       .sort(([a], [b]) => a - b);
     let cursor = start;
     for (const [a, b] of blocked) {
-      if (a > cursor) gaps.push([cursor, Math.min(a, end)]);
+      if (a - o.breakMinutes * minute > cursor) gaps.push([cursor, Math.min(a - o.breakMinutes * minute, end)]);
       cursor = Math.max(cursor, b + o.breakMinutes * minute);
       if (cursor >= end) break;
     }
     if (cursor < end) gaps.push([cursor, end]);
   }
-  const priority = { high: 0, medium: 1, low: 2 };
-  const tasks = w.tasks
-    .filter((t) => !t.deletedAt && t.status !== "done")
-    .sort(
-      (a, b) =>
-        (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") ||
-        priority[a.priority] - priority[b.priority] ||
-        a.createdAt.localeCompare(b.createdAt) ||
-        a.id.localeCompare(b.id),
-    );
-  const events: EventInput[] = [],
-    unscheduled: Proposal["unscheduled"] = [];
-  for (const t of tasks) {
-    const deadline = t.dueDate
-      ? boundary(
-          Temporal.PlainDate.from(t.dueDate).add({ days: 1 }),
-          0,
-          o.timeZone,
-          "later",
-        )
-      : Infinity;
-    const reserved = w.events
-      .filter(
-        (e) =>
-          !e.deletedAt &&
-          !e.allDay &&
-          e.taskId === t.id &&
-          Date.parse(e.start) >= now &&
-          Date.parse(e.end) <= deadline,
-      )
-      .reduce(
-        (n, e) =>
-          n + Math.floor((Date.parse(e.end) - Date.parse(e.start)) / minute),
-        0,
-      );
-    let remaining = Math.max(0, t.estimateMinutes - reserved);
-    for (const gap of gaps) {
-      while (remaining > 0 && events.length < 100) {
-        const minutes = Math.min(
-          remaining,
-          90,
-          Math.floor((Math.min(gap[1], deadline) - gap[0]) / minute),
-        );
-        if (minutes < 5) break;
-        const end = gap[0] + minutes * minute;
-        events.push({
-          title: t.title,
-          description:
-            "Planned study/work session. Move or resize it to adjust your plan.",
-          start: new Date(gap[0]).toISOString(),
-          end: new Date(end).toISOString(),
-          allDay: false,
-          timeZone: o.timeZone,
-          tagIds: t.tagIds.filter((id) =>
-            w.tags.some((tag) => tag.id === id && !tag.deletedAt),
-          ),
-          taskId: t.id,
-        });
-        gap[0] = end + o.breakMinutes * minute;
-        remaining -= minutes;
-      }
-      if (!remaining) break;
-    }
-    if (remaining)
-      unscheduled.push({
-        title: t.title,
-        minutes: remaining,
-        reason:
-          deadline <= now
-            ? "Deadline has passed."
-            : "Not enough free time before the deadline within these study hours. Existing events were kept.",
-      });
-  }
+  const { events, unscheduled } = scheduleTasks(w, gaps, o.timeZone, now, o.breakMinutes);
   return { id, events, unscheduled, fingerprint: workspaceFingerprint(w) };
 }
 let pending: Proposal | null = null;

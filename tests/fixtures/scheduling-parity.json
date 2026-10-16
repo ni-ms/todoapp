@@ -1,0 +1,1465 @@
+[
+  {
+    "name": "exact deadline permits only 30 minutes",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": "2026-10-15T09:30:00-07:00",
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T09:30:00-07:00"
+      }
+    ],
+    "unscheduled": [
+      {
+        "title": "a",
+        "minutes": 30
+      }
+    ]
+  },
+  {
+    "name": "earliest start preserves prior free time",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": "2026-10-15T14:00:00-07:00",
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "b",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T14:00:00-07:00",
+        "end": "2026-10-15T15:00:00-07:00"
+      },
+      {
+        "taskId": "b",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T10:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "dependencies outrank deadline priority",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "high",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "b"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "b",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "b",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T10:00:00-07:00"
+      },
+      {
+        "taskId": "a",
+        "start": "2026-10-15T10:00:00-07:00",
+        "end": "2026-10-15T11:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "dependency cycle",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "b"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "b",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "title": "b",
+        "minutes": 60
+      },
+      {
+        "title": "a",
+        "minutes": 60
+      }
+    ]
+  },
+  {
+    "name": "deleted missing prerequisite",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "missing"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "title": "a",
+        "minutes": 60
+      }
+    ]
+  },
+  {
+    "name": "fixed reservation precedes flexible work",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "b",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": "2026-10-15T09:00:00-07:00",
+            "fixedEnd": "2026-10-15T10:00:00-07:00",
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T10:00:00-07:00",
+        "end": "2026-10-15T11:00:00-07:00"
+      },
+      {
+        "taskId": "b",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T10:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "single sitting cannot fragment",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 90,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": false,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 10,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "title": "a",
+        "minutes": 90
+      }
+    ]
+  },
+  {
+    "name": "session lengths and breaks",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 120,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 30,
+            "preferredSessionMinutes": 30,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 10
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T09:30:00-07:00"
+      },
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:40:00-07:00",
+        "end": "2026-10-15T10:10:00-07:00"
+      },
+      {
+        "taskId": "a",
+        "start": "2026-10-15T10:20:00-07:00",
+        "end": "2026-10-15T10:50:00-07:00"
+      },
+      {
+        "taskId": "a",
+        "start": "2026-10-15T11:00:00-07:00",
+        "end": "2026-10-15T11:30:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "soft evening preference",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [
+              {
+                "days": [
+                  4
+                ],
+                "start": "18:00",
+                "end": "21:00"
+              }
+            ],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T18:00:00-07:00",
+        "end": "2026-10-15T19:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "hard evening cutoff",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": "2026-10-15T20:30:00-07:00",
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [
+              {
+                "days": [
+                  4
+                ],
+                "start": "00:00",
+                "end": "21:00"
+              }
+            ],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T20:30:00-07:00",
+        "end": "2026-10-15T21:00:00-07:00"
+      }
+    ],
+    "unscheduled": [
+      {
+        "title": "a",
+        "minutes": 30
+      }
+    ]
+  },
+  {
+    "name": "remaining zero and clarification hold",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": 0,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "b",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [
+              "Which class?"
+            ],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "title": "b",
+        "minutes": 60
+      }
+    ]
+  },
+  {
+    "name": "do not strand a sub-minimum remainder",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 100,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 30,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T10:10:00-07:00"
+      },
+      {
+        "taskId": "a",
+        "start": "2026-10-15T10:10:00-07:00",
+        "end": "2026-10-15T10:40:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "work date stays separate from deadline",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": "2026-10-16"
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-16T09:00:00-07:00",
+        "end": "2026-10-16T10:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "existing fixed session is counted once",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": "2026-10-15T09:00:00-07:00",
+            "fixedEnd": "2026-10-15T10:00:00-07:00",
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": [
+        {
+          "id": "manual",
+          "title": "manual",
+          "description": "",
+          "start": "2026-10-15T09:00:00-07:00",
+          "end": "2026-10-15T10:00:00-07:00",
+          "allDay": false,
+          "timeZone": "America/Los_Angeles",
+          "taskId": "a",
+          "tagIds": [],
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null
+        }
+      ]
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": []
+  },
+  {
+    "name": "overlapping reservations count their union",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 120,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": [
+        {
+          "id": "manual",
+          "title": "manual",
+          "description": "",
+          "start": "2026-10-15T09:00:00-07:00",
+          "end": "2026-10-15T10:00:00-07:00",
+          "allDay": false,
+          "timeZone": "America/Los_Angeles",
+          "taskId": "a",
+          "tagIds": [],
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null
+        },
+        {
+          "id": "second",
+          "title": "second",
+          "description": "",
+          "start": "2026-10-15T09:30:00-07:00",
+          "end": "2026-10-15T10:30:00-07:00",
+          "allDay": false,
+          "timeZone": "America/Los_Angeles",
+          "taskId": "a",
+          "tagIds": [],
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null
+        }
+      ]
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T10:30:00-07:00",
+        "end": "2026-10-15T11:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "break before existing commitment",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 120,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": [
+        {
+          "id": "busy",
+          "title": "busy",
+          "description": "",
+          "start": "2026-10-15T10:00:00-07:00",
+          "end": "2026-10-15T11:00:00-07:00",
+          "allDay": false,
+          "timeZone": "America/Los_Angeles",
+          "taskId": null,
+          "tagIds": [],
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null
+        }
+      ]
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 12,
+      "weekends": true,
+      "breakMinutes": 10
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T09:50:00-07:00"
+      },
+      {
+        "taskId": "a",
+        "start": "2026-10-15T11:10:00-07:00",
+        "end": "2026-10-15T12:00:00-07:00"
+      }
+    ],
+    "unscheduled": [
+      {
+        "title": "a",
+        "minutes": 20
+      }
+    ]
+  },
+  {
+    "name": "fall DST ambiguous task window is skipped",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-11-01",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [
+              {
+                "days": [
+                  7
+                ],
+                "start": "01:00",
+                "end": "02:00"
+              }
+            ],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-11-01",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 0,
+      "endHour": 4,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-31T23:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "title": "a",
+        "minutes": 60
+      }
+    ]
+  },
+  {
+    "name": "adjacent hard windows form a continuous allowed interval",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 120,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": false,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [
+              {
+                "days": [
+                  4
+                ],
+                "start": "09:00",
+                "end": "10:00"
+              },
+              {
+                "days": [
+                  4
+                ],
+                "start": "10:00",
+                "end": "11:00"
+              }
+            ],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T11:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "zero effort does not reserve a fixed block",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "a",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "b",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-15",
+          "estimateMinutes": 60,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": "2026-10-15T09:00:00-07:00",
+            "fixedEnd": "2026-10-15T10:00:00-07:00",
+            "remainingMinutes": 0,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T10:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  }
+]

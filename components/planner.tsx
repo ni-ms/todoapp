@@ -19,8 +19,10 @@ import {
 import { duration, localDate, type Workspace } from "@/lib/domain";
 export function Planner({
   onApply,
+  requestOpen = 0,
 }: {
   onApply: (w: Workspace, notice: string) => void;
+  requestOpen?: number;
 }) {
   const trigger = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false),
@@ -43,6 +45,13 @@ export function Planner({
       active = false;
     };
   }, []);
+  const [handledRequest, setHandledRequest] = useState(requestOpen);
+  if (requestOpen !== handledRequest) {
+    setHandledRequest(requestOpen);
+    setOpen(true);
+    setProposal(null);
+    setError("");
+  }
   async function preview() {
     setBusy(true);
     setError("");

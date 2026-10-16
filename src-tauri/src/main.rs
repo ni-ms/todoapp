@@ -4,11 +4,14 @@
 mod areas;
 mod backup;
 mod calendar;
+mod capture_resolution;
 mod google;
 mod ical;
 mod local_ai;
 mod planner;
+mod schedule_engine;
 mod services;
+mod task_scheduling;
 mod todo_utils;
 mod trash;
 mod workspace;
@@ -213,20 +216,45 @@ async fn extract_tasks(
     text: String,
     context_ids: Vec<String>,
     today: String,
+    time_zone: String,
+    now: String,
+    calendar_ids: Vec<String>,
 ) -> Result<Vec<local_ai::Draft>, String> {
     let db = db.inner().clone();
     let cache = cache.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        local_ai::extract(&db, &cache, text, context_ids, today)
+        local_ai::extract(
+            &db,
+            &cache,
+            text,
+            context_ids,
+            today,
+            time_zone,
+            now,
+            calendar_ids,
+        )
     })
     .await
     .map_err(|_| "Local task capture interrupted.")?
 }
 #[tauri::command]
-async fn transcribe_audio(audio: String) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || local_ai::transcribe(audio))
+async fn configure_local_speech(
+    db: State<'_, Database>,
+    model: local_ai::SpeechEngine,
+) -> Result<(), String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || local_ai::configure_speech(&db, model))
         .await
-        .map_err(|_| "Transcription interrupted.")?
+        .map_err(|_| "Speech setup interrupted.")?
+}
+#[tauri::command]
+async fn transcribe_audio(db: State<'_, Database>, audio: String) -> Result<String, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        local_ai::transcribe(audio, local_ai::speech_engine(&db)?)
+    })
+    .await
+    .map_err(|_| "Transcription interrupted.")?
 }
 #[tauri::command]
 async fn purge_record(
@@ -429,6 +457,7 @@ fn main() {
             remove_context,
             extract_tasks,
             transcribe_audio,
+            configure_local_speech,
             save_event,
             export_calendar,
             backup_status,

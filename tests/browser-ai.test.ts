@@ -12,8 +12,11 @@ import {
   hasHostedKey,
 } from "../lib/ai";
 import { browserRead, workspaceBackup } from "../lib/browser-store";
+import { defaultScheduling } from "../lib/task-scheduling";
 import { emptyWorkspace } from "../lib/domain";
 const draft = {
+  scheduling: defaultScheduling("America/Los_Angeles"),
+  estimatedFields: [],
   title: "Study",
   description: "",
   priority: "high",
@@ -205,4 +208,25 @@ test("hosted capture sends only explicit input and tags, validates output, and n
     globalThis.fetch = oldFetch;
     setHostedKey("");
   }
+});
+
+test("capture includes only selected calendar events and repairs invalid drafts once with the same provider",async()=>{
+ const {storage}=await import("../lib/storage");
+ const input={title:"Selected class",description:"PRIVATE EVENT NOTES",start:"2026-10-16T09:00:00-07:00",end:"2026-10-16T10:00:00-07:00",allDay:false,timeZone:"America/Los_Angeles",tagIds:[],taskId:null};
+ let w=await storage().saveEvent(input);const selected=w.events.at(-1)!;
+ w=await storage().saveEvent({...input,title:"PRIVATE UNSELECTED EVENT"});
+ const oldFetch=globalThis.fetch;let calls=0;
+ try {
+   await saveAISettings({provider:"openrouter",model:"",hostedModel:"openrouter/free"});setHostedKey("test-only-key");
+   globalThis.fetch=async(url,init)=>{
+     assert.equal(String(url),"https://openrouter.ai/api/v1/chat/completions");
+     const text=String(init?.body);assert.ok(text.includes("Selected class"));assert.ok(!text.includes("PRIVATE UNSELECTED EVENT"));assert.ok(!text.includes("PRIVATE EVENT NOTES"));
+     calls++;if(calls===2)assert.ok(text.includes("did not pass validation"));
+     return Response.json({choices:[{message:{content:calls===1?'{"tasks":[]}':JSON.stringify({tasks:[draft]})}}]});
+   };
+   assert.equal((await extractTasks("Study after selected class",[],"2026-10-15","America/Los_Angeles","2026-10-15T08:00:00-07:00",[selected.id])).length,1);
+   assert.equal(calls,2);assert.deepEqual(await storage().load(),w);
+   calls=0;globalThis.fetch=async()=>{calls++;return Response.json({choices:[{message:{content:'{"tasks":[]}'}}]});};
+   await assert.rejects(extractTasks("Invalid repeated response",[],"2026-10-15"));assert.equal(calls,2);
+ }finally {globalThis.fetch=oldFetch;setHostedKey("");}
 });

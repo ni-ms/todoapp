@@ -4,12 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { isDesktop } from "@/lib/storage";
 import { BrowserAISettings } from "./browser-ai-settings";
-export interface LocalAIStatus {
-  models: string[];
-  model: string;
-  ollamaAvailable: boolean;
-  whisperAvailable: boolean;
-}
+import type { LocalAIStatus } from "@/lib/ai";
+export type { LocalAIStatus } from "@/lib/ai";
 export function LocalAISettings() {
   return isDesktop() ? <NativeAISettings /> : <BrowserAISettings />;
 }
@@ -46,7 +42,7 @@ function NativeAISettings() {
     <section className="surface space-y-4 p-6">
       <h2 className="text-sm font-semibold">Local AI</h2>
       <p className="text-sm text-muted-foreground">
-        Use Ollama for task drafts and Whisper for voice transcription. No API
+        Use Ollama for task drafts and Phonon 2 or Whisper for voice transcription. No API
         key is needed.
       </p>
       {isDesktop() ? (
@@ -56,12 +52,35 @@ function NativeAISettings() {
               Ollama: {status?.ollamaAvailable ? "running" : "not connected"}
             </span>
             <span>
-              Whisper: {status?.whisperAvailable ? "running" : "not connected"}
+              Speech: {status?.speechAvailable ? "running" : "not connected"}
             </span>
             <Button size="sm" variant="outline" disabled={busy} onClick={check}>
               Check connection
             </Button>
           </div>
+          <label className="block space-y-2 text-xs">
+            <span>Speech model</span>
+            <select className="field-select" value={status?.speechModel ?? "whisper"}
+              disabled={busy || !status}
+              onChange={async (e) => {
+                const model = e.target.value;
+                setBusy(true);
+                setError("");
+                try {
+                  await invoke("configure_local_speech", { model });
+                  setStatus(await invoke<LocalAIStatus>("local_ai_status"));
+                } catch (e) { setError(String(e)); }
+                finally { setBusy(false); }
+              }}>
+              <option value="phonon-2">Phonon 2 · English</option>
+              <option value="whisper">Whisper · installed model</option>
+            </select>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Audio stays on this device. Models never switch automatically.
+            Phonon 2 requires Fermion and a one-time model download (about 164 MB).
+            Start local AI after selecting it. Existing services keep running until stopped.
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
@@ -145,8 +164,9 @@ function NativeAISettings() {
             port 11434. Disable Ollama cloud features for offline use.
           </li>
           <li>
-            For voice, install whisper.cpp, download a speech model, and start
-            whisper-server on port 8080.
+            For Phonon 2, install Fermion with its local runtime and start
+            the Phonon 2 server on port 8010. For Whisper, install whisper.cpp,
+            download a speech model, and start whisper-server on port 8080.
           </li>
           <li>
             Choose your task model above. Open My day to type or record a

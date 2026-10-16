@@ -194,3 +194,26 @@ test("speech status and cancellation survive settings subscriber remounts", asyn
   assert.ok(updates >= 2);
   resubscribe();
 });
+
+test("switching speech models cancels old downloads, ignores stale results and loads only the explicit selection", async () => {
+  const workers: FakeSpeechWorker[] = [];
+  const client = new SpeechClient(() => {
+    const worker = new FakeSpeechWorker(); workers.push(worker); return worker;
+  });
+  const loading = client.load();
+  assert.equal(workers[0].commands[0].type, "load");
+  assert.deepEqual(workers[0].commands[0], { type: "load", id: 1, model: "phonon-2" });
+  client.selectModel("whisper-tiny");
+  await assert.rejects(loading, /canceled/);
+  assert.equal(workers[0].terminated, true);
+  assert.equal(client.getSnapshot().model, "whisper-tiny");
+  const retry = client.load();
+  workers[0].emit({ type: "ready", id: 2 });
+  assert.equal(client.isReady(), false);
+  assert.deepEqual(workers[1].commands[0], { type: "load", id: 2, model: "whisper-tiny" });
+  workers[1].emit({ type: "error", id: 2, message: "Model failed" });
+  await assert.rejects(retry, /Model failed/);
+  assert.equal(client.getSnapshot().model, "whisper-tiny");
+  assert.equal(workers.length, 2); // A failure never loads a different model.
+  assert.throws(() => client.selectModel("remote" as never), /supported/);
+});

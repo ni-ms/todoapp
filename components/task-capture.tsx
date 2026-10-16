@@ -1,4 +1,6 @@
 "use client";
+import type { Draft as CaptureDraft } from "@/lib/ai-contract";
+import { SchedulingFields } from "@/components/scheduling-fields";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Mic, Square, Paperclip, FolderPlus, Sparkles, X } from "lucide-react";
@@ -11,6 +13,7 @@ import {
   localDate,
   validateTask,
   type Tag,
+  type CalendarEvent,
   type TaskInput,
 } from "@/lib/domain";
 import {
@@ -28,26 +31,23 @@ interface ContextItem {
   truncated: boolean;
   selected: boolean;
 }
-interface Draft {
-  title: string;
-  description: string;
-  priority: TaskInput["priority"];
-  dueDate: string | null;
-  estimateMinutes: number;
-  tagIds: string[];
-  selected: boolean;
-}
+interface Draft extends CaptureDraft { selected: boolean; editedFields: string[]; }
 export function TaskCapture({
   tags,
+  events = [],
   defaultTag,
   onSave,
   onSettings,
+  onPlan,
 }: {
   tags: Tag[];
+  events?: CalendarEvent[];
   defaultTag?: string;
   onSave: (inputs: TaskInput[]) => Promise<void>;
   onSettings: () => void;
+  onPlan: () => void;
 }) {
+  const [calendarIds,setCalendarIds]=useState<string[]>([]);
   const [text, setText] = useState(""),
     [contexts, setContexts] = useState<ContextItem[]>([]),
     [drafts, setDrafts] = useState<Draft[]>([]),
@@ -155,7 +155,7 @@ export function TaskCapture({
         setBusy(true);
         setHint(
           isDesktop()
-            ? "Transcribing with local Whisper…"
+            ? "Transcribing with your local speech model…"
             : "Transcribing on this device…",
         );
         try {
@@ -211,6 +211,9 @@ export function TaskCapture({
         text,
         contexts.filter((c) => c.selected),
         localDate(),
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        new Date().toISOString(),
+        calendarIds,
       );
       if (mounted.current)
         setDrafts(
@@ -226,6 +229,7 @@ export function TaskCapture({
               ]),
             ],
             selected: true,
+            editedFields: [],
           })),
         );
     } catch (e) {
@@ -236,7 +240,7 @@ export function TaskCapture({
   }
   const change = (index: number, patch: Partial<Draft>) =>
     setDrafts((all) =>
-      all.map((d, i) => (i === index ? { ...d, ...patch } : d)),
+      all.map((d, i) => (i === index ? { ...d, ...patch, editedFields: [...new Set([...d.editedFields,...Object.keys(patch).filter((key)=>key!=="selected")])] } : d)),
     );
   async function browserFiles(files: File[]) {
     setBusy(true);
@@ -306,7 +310,7 @@ export function TaskCapture({
       )}
       {hosted && (
         <p className="mb-3 text-xs text-muted-foreground">
-          Creating drafts sends your request, checked excerpts, and active tag
+          Creating drafts sends your request, checked excerpts, selected calendar events, and active tag
           names to OpenRouter and its model provider.
         </p>
       )}
@@ -364,12 +368,17 @@ export function TaskCapture({
       <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         {recording
           ? isDesktop()
-            ? "Recording… Stops after 90 seconds. Audio goes only to your local Whisper server."
+            ? "Recording… Stops after 90 seconds. Audio goes only to your selected local speech model."
             : "Recording… Stops after 90 seconds. Audio stays on this device and is transcribed in your browser."
           : isDesktop()
-            ? "Review AI setup to choose where requests are processed. Recording uses your local Whisper server. Review drafts before adding them."
+            ? "Review AI setup to choose where requests are processed. Recording uses your selected local speech model. Review drafts before adding them."
             : "Voice is transcribed on this device. Load the speech model in AI setup first. Review the transcript before creating task drafts."}
       </p>
+      {events.some((e)=>!e.deletedAt) && <details className="mt-4 rounded-lg border p-3 text-xs">
+        <summary className="cursor-pointer font-medium">Choose calendar context ({calendarIds.length} selected)</summary>
+        <p className="my-2 text-muted-foreground">Only checked event titles, times, and time zones are sent with this request. Select a class to explain “after class”. Up to 20 events.</p>
+        <div className="max-h-40 space-y-2 overflow-auto">{events.filter((e)=>!e.deletedAt).sort((a,b)=>a.start.localeCompare(b.start)).slice(-100).map((e)=><label key={e.id} className="flex items-center gap-2"><input type="checkbox" disabled={busy || (!calendarIds.includes(e.id) && calendarIds.length>=20)} checked={calendarIds.includes(e.id)} onChange={(event)=>{setCalendarIds((ids)=>event.target.checked?[...ids,e.id]:ids.filter((id)=>id!==e.id));setDrafts([]);}}/>{e.title} · {e.allDay?e.start:new Date(e.start).toLocaleString()}</label>)}</div>
+      </details>}
       {contexts.length > 0 && (
         <details className="mt-4 rounded-lg border p-3 text-xs">
           <summary className="cursor-pointer font-medium">
@@ -440,7 +449,8 @@ export function TaskCapture({
       )}
       {drafts.length > 0 && (
         <div className="mt-5 space-y-4 border-t pt-5">
-          <h3 className="text-sm font-semibold">Review task drafts</h3>
+          <h3 className="text-sm font-semibold">What the app understood</h3>
+          <p className="text-xs text-muted-foreground">Review each task before adding it. Estimates are labeled; unresolved instructions stay visible and pause scheduling.</p>
           {drafts.map((d, index) => (
             <fieldset
               key={index}
@@ -457,6 +467,7 @@ export function TaskCapture({
                 />
                 Add this task
               </label>
+              <p className="text-xs text-muted-foreground">From your request · Task {index + 1}</p>
               <Input
                 aria-label={`Task ${index + 1} title`}
                 maxLength={200}
@@ -475,7 +486,7 @@ export function TaskCapture({
                   />
                 </label>
                 <label className="space-y-1 text-xs">
-                  Minutes
+                  Minutes · {d.editedFields.includes("estimateMinutes") ? "Edited by you" : d.estimatedFields.includes("estimateMinutes") ? "Estimated" : "From your request"}
                   <Input
                     type="number"
                     min={5}
@@ -487,7 +498,7 @@ export function TaskCapture({
                   />
                 </label>
                 <label className="space-y-1 text-xs">
-                  Priority
+                  Priority · {d.editedFields.includes("priority") ? "Edited by you" : d.estimatedFields.includes("priority") ? "Estimated" : "From your request"}
                   <select
                     className="field-select"
                     value={d.priority}
@@ -509,6 +520,8 @@ export function TaskCapture({
                 value={d.description}
                 onChange={(e) => change(index, { description: e.target.value })}
               />
+              {d.scheduling.unresolved.length > 0 && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Needs clarification: {d.scheduling.unresolved.join(" ")}</p>}
+              <SchedulingFields value={d.scheduling} onChange={(scheduling)=>change(index,{scheduling})} dependencies={drafts.flatMap((item,i)=>i!==index?[{id:`draft:${i}`,title:item.title}]:[])}/>
               <TagPicker
                 tags={tags}
                 value={d.tagIds}
@@ -522,9 +535,11 @@ export function TaskCapture({
               setBusy(true);
               setError("");
               try {
+                const chosen = drafts.map((d,i)=>d.selected?i:-1).filter((i)=>i>=0);
                 const inputs = drafts
                   .filter((d) => d.selected)
                   .map((d) => ({
+                    scheduling: { ...d.scheduling, dependencies: d.scheduling.dependencies.map((id)=> {const original=Number(id.slice(6)), index=chosen.indexOf(original); if (index<0) throw new Error("Select the prerequisite task too, or remove its dependency."); return `draft:${index}`;}) },
                     title: d.title,
                     description: d.description,
                     priority: d.priority,
@@ -539,7 +554,8 @@ export function TaskCapture({
                 await onSave(inputs);
                 setDrafts([]);
                 setText("");
-                setHint("Tasks added. Use Plan my week to find time for them.");
+                setHint("Tasks added. Review your week to see proposed sessions and any work that cannot fit.");
+                onPlan();
               } catch (e) {
                 setError(e instanceof Error ? e.message : String(e));
               } finally {
@@ -547,7 +563,7 @@ export function TaskCapture({
               }
             }}
           >
-            Add {drafts.filter((d) => d.selected).length} tasks
+            Add {drafts.filter((d) => d.selected).length} tasks and review week
           </Button>
         </div>
       )}

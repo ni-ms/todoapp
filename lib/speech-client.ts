@@ -1,6 +1,7 @@
 import { validateSpeechSamples, validateTranscript } from "./speech-audio";
+import { isSpeechModel, type SpeechModel } from "./speech-model";
 export type SpeechCommand =
-  | { type: "load"; id: number }
+  | { type: "load"; id: number; model: SpeechModel }
   | { type: "transcribe"; id: number; samples: Float32Array };
 export type SpeechMessage =
   | { type: "progress"; id: number; text: string }
@@ -15,6 +16,7 @@ export interface SpeechWorkerPort {
   onmessageerror: ((event: MessageEvent) => void) | null;
 }
 export interface SpeechSnapshot {
+  model: SpeechModel;
   ready: boolean;
   busy: boolean;
   operation: "load" | "transcribe" | null;
@@ -22,6 +24,7 @@ export interface SpeechSnapshot {
   error: string;
 }
 export const emptySpeechSnapshot: SpeechSnapshot = {
+  model: "phonon-2",
   ready: false,
   busy: false,
   operation: null,
@@ -30,6 +33,7 @@ export const emptySpeechSnapshot: SpeechSnapshot = {
 };
 /** One cancellable worker per tab; speech never goes through a provider/network adapter. */
 export class SpeechClient {
+  private model: SpeechModel = "phonon-2";
   private worker?: SpeechWorkerPort;
   private sequence = 0;
   private ready = false;
@@ -46,6 +50,7 @@ export class SpeechClient {
   };
   private notify() {
     this.snapshot = {
+      model: this.model,
       ready: this.ready,
       busy: Boolean(this.pending),
       operation: this.pending?.kind ?? null,
@@ -68,6 +73,14 @@ export class SpeechClient {
   }
   isBusy() {
     return Boolean(this.pending);
+  }
+  selectModel(model: SpeechModel) {
+    if (!isSpeechModel(model)) throw new Error("Choose a supported speech model.");
+    if (model === this.model) return;
+    this.stop();
+    this.model = model;
+    this.progress = "Load the selected speech model before recording.";
+    this.notify();
   }
   private finish(error?: Error, text = "") {
     const pending = this.pending;
@@ -169,7 +182,7 @@ export class SpeechClient {
           this.stop(
             "Speech took too long. Load the model again and try a shorter recording.",
           ),
-        10 * 60 * 1000,
+        (command.type === "load" ? 30 : 10) * 60 * 1000,
       );
       this.pending = {
         id: command.id,
@@ -206,7 +219,7 @@ export class SpeechClient {
   }
   async load(progress?: (text: string) => void) {
     if (this.ready) return;
-    await this.request({ type: "load", id: ++this.sequence }, progress);
+    await this.request({ type: "load", id: ++this.sequence, model: this.model }, progress);
   }
   transcribe(samples: Float32Array, signal?: AbortSignal): Promise<string> {
     if (!this.ready)

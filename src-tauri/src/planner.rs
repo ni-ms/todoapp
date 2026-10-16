@@ -101,7 +101,7 @@ pub fn plan(w: &Workspace, options: &Options, now: DateTime<Utc>) -> Result<Prop
                     .map(|(a, b)| (a.with_timezone(&Utc), b.with_timezone(&Utc)))
             };
             if let Some((a, b)) = pair {
-                if a < end && b > start {
+                if a < end && b + Duration::minutes(options.break_minutes) > start {
                     blocked.push((a, b + Duration::minutes(options.break_minutes)));
                 }
             }
@@ -109,8 +109,11 @@ pub fn plan(w: &Workspace, options: &Options, now: DateTime<Utc>) -> Result<Prop
         blocked.sort_by_key(|(a, _)| *a);
         let mut cursor = start;
         for (a, b) in blocked {
-            if a > cursor {
-                gaps.push((cursor, a.min(end)));
+            if a - Duration::minutes(options.break_minutes) > cursor {
+                gaps.push((
+                    cursor,
+                    (a - Duration::minutes(options.break_minutes)).min(end),
+                ));
             }
             cursor = cursor.max(b);
             if cursor >= end {
@@ -121,91 +124,8 @@ pub fn plan(w: &Workspace, options: &Options, now: DateTime<Utc>) -> Result<Prop
             gaps.push((cursor, end));
         }
     }
-    let mut tasks = w
-        .tasks
-        .iter()
-        .filter(|t| t.deleted_at.is_none() && t.status != "done")
-        .collect::<Vec<_>>();
-    tasks.sort_by_key(|t| {
-        (
-            t.due_date.clone().unwrap_or_else(|| "9999".into()),
-            match t.priority.as_str() {
-                "high" => 0,
-                "medium" => 1,
-                _ => 2,
-            },
-            t.created_at.clone(),
-            t.id.clone(),
-        )
-    });
-    let mut events = vec![];
-    let mut unscheduled = vec![];
-    for t in tasks {
-        let deadline = t
-            .due_date
-            .as_ref()
-            .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
-            .and_then(|d| d.succ_opt())
-            .and_then(|d| zone.from_local_datetime(&d.and_hms_opt(0, 0, 0)?).latest())
-            .map(|d| d.with_timezone(&Utc));
-        let reserved = w
-            .events
-            .iter()
-            .filter(|e| {
-                e.deleted_at.is_none() && !e.all_day && e.task_id.as_deref() == Some(t.id.as_str())
-            })
-            .filter_map(|e| {
-                DateTime::parse_from_rfc3339(&e.start)
-                    .ok()
-                    .zip(DateTime::parse_from_rfc3339(&e.end).ok())
-            })
-            .filter(|(a, b)| {
-                a.with_timezone(&Utc) >= now && deadline.is_none_or(|d| b.with_timezone(&Utc) <= d)
-            })
-            .map(|(a, b)| (b - a).num_minutes())
-            .sum::<i64>();
-        let mut remaining = (t.estimate_minutes - reserved).max(0);
-        for gap in &mut gaps {
-            while remaining > 0 && events.len() < 100 {
-                let end = deadline.map_or(gap.1, |d| gap.1.min(d));
-                let available = (end - gap.0).num_minutes();
-                let minutes = remaining.min(90).min(available);
-                if minutes < 5 {
-                    break;
-                }
-                let block_end = gap.0 + Duration::minutes(minutes);
-                events.push(EventInput {
-                    id: None,
-                    title: t.title.clone(),
-                    description:
-                        "Planned study/work session. Move or resize it to adjust your plan.".into(),
-                    start: gap.0.to_rfc3339(),
-                    end: block_end.to_rfc3339(),
-                    all_day: false,
-                    time_zone: options.time_zone.clone(),
-                    tag_ids: t
-                        .tag_ids
-                        .iter()
-                        .filter(|id| {
-                            w.tags
-                                .iter()
-                                .any(|tag| &tag.id == *id && tag.deleted_at.is_none())
-                        })
-                        .cloned()
-                        .collect(),
-                    task_id: Some(t.id.clone()),
-                });
-                remaining -= minutes;
-                gap.0 = block_end + Duration::minutes(options.break_minutes);
-            }
-            if remaining == 0 {
-                break;
-            }
-        }
-        if remaining > 0 {
-            unscheduled.push(Unscheduled{title:t.title.clone(),minutes:remaining,reason:if deadline.is_some_and(|d|d<=now){"Deadline has passed."}else{"Not enough free time before the deadline within these study hours. Existing events were kept."}.into()});
-        }
-    }
+    let (events, unscheduled) =
+        crate::schedule_engine::schedule(w, gaps, &options.time_zone, now, options.break_minutes)?;
     Ok(Proposal {
         id: uuid::Uuid::new_v4().to_string(),
         events,
@@ -234,6 +154,14 @@ pub fn apply(db: &Database, pending: &PendingPlan, id: String) -> Result<Workspa
     }
     if p.events.is_empty() {
         return Err("There are no sessions to add.".into());
+    }
+    if p.events.iter().any(|e| {
+        DateTime::parse_from_rfc3339(&e.start)
+            .is_ok_and(|start| start.with_timezone(&Utc) < Utc::now())
+    }) {
+        return Err(
+            "This plan is out of date. Preview again to avoid scheduling in the past.".into(),
+        );
     }
     let tx = store
         .connection
