@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { isDesktop } from "@/lib/storage";
 import { BrowserAISettings } from "./browser-ai-settings";
+import { LocalAIInstaller } from "./local-ai-installer";
 import type { LocalAIStatus } from "@/lib/ai";
 export type { LocalAIStatus } from "@/lib/ai";
 export function LocalAISettings() {
@@ -12,7 +13,12 @@ export function LocalAISettings() {
 function NativeAISettings() {
   const [status, setStatus] = useState<LocalAIStatus | null>(null),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [working, setBusy] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const busy = working || installing;
+  const refresh = useCallback(() => {
+    void invoke<LocalAIStatus>("local_ai_status").then(setStatus).catch((e) => setError(String(e)));
+  }, []);
   async function check() {
     setBusy(true);
     setError("");
@@ -45,6 +51,7 @@ function NativeAISettings() {
         Use Ollama for task drafts and Phonon 2 or Whisper for voice transcription. No API
         key is needed.
       </p>
+      <LocalAIInstaller onBusyChange={setInstalling} refresh={refresh} taskModelInstalled={Boolean(status?.models.includes("qwen3:4b"))} />
       {isDesktop() ? (
         <>
           <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -73,13 +80,12 @@ function NativeAISettings() {
                 finally { setBusy(false); }
               }}>
               <option value="phonon-2">Phonon 2 · English</option>
-              <option value="whisper">Whisper · installed model</option>
+              <option value="whisper">Whisper base.en · English</option>
             </select>
           </label>
           <p className="text-xs text-muted-foreground">
             Audio stays on this device. Models never switch automatically.
-            Phonon 2 requires Fermion and a one-time model download (about 164 MB).
-            Start local AI after selecting it. Existing services keep running until stopped.
+            Download the speech option above, then start local AI after selecting it. Existing services keep running until stopped.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -160,13 +166,10 @@ function NativeAISettings() {
         </summary>
         <ol className="mt-3 list-decimal space-y-2 pl-4">
           <li>
-            Install Ollama, download a local text model, and start Ollama on
-            port 11434. Disable Ollama cloud features for offline use.
+            Use Download & install above for task drafts, or install all options. Setup installs Ollama and downloads Qwen 3 4B without changing your task-model selection.
           </li>
           <li>
-            For Phonon 2, install Fermion with its local runtime and start
-            the Phonon 2 server on port 8010. For Whisper, install whisper.cpp,
-            download a speech model, and start whisper-server on port 8080.
+            Download Phonon 2 or Whisper above, select your speech model, then press Start local AI. The app starts local services and stops the ones it owns when you quit.
           </li>
           <li>
             Choose your task model above. Open My day to type or record a
@@ -174,8 +177,7 @@ function NativeAISettings() {
           </li>
         </ol>
         <p className="mt-3 text-muted-foreground">
-          Models require a one-time download. See docs/local-ai.md in this
-          project for exact commands. Audio is converted to WAV here; FFmpeg is
+          The automatic desktop installer currently supports macOS and uses Homebrew for runtime packages. Audio is converted to WAV here; FFmpeg is
           not needed. Cloud model aliases are rejected.
         </p>
       </details>

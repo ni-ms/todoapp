@@ -49,7 +49,7 @@ impl Drop for Services {
         }
     }
 }
-fn binary(name: &str) -> Result<std::path::PathBuf> {
+pub(crate) fn binary(name: &str) -> Result<std::path::PathBuf> {
     let mut directories = vec![
         std::path::PathBuf::from("/opt/homebrew/bin"),
         std::path::PathBuf::from("/usr/local/bin"),
@@ -63,38 +63,63 @@ fn binary(name: &str) -> Result<std::path::PathBuf> {
             return Ok(path);
         }
     }
-    Err(format!("Install {name} first. See Local AI setup."))
+    Err(format!(
+        "Use Download & install in Settings → Local AI to install {name} first."
+    ))
+}
+pub fn start_ollama(services: &ServiceState) -> Result<()> {
+    use std::process::{Command, Stdio};
+    let mut children = services
+        .children
+        .lock()
+        .map_err(|_| "Local services unavailable.")?;
+    if document(client(2)?.get("http://127.0.0.1:11434/api/tags").send()).is_ok() {
+        return Ok(());
+    }
+    children.retain_mut(|child| child.try_wait().is_ok_and(|exit| exit.is_none()));
+    children.push(
+        Command::new(binary("ollama")?)
+            .arg("serve")
+            .env("OLLAMA_NO_CLOUD", "1")
+            .env("OLLAMA_HOST", "127.0.0.1:11434")
+            .env("OLLAMA_FLASH_ATTENTION", "1")
+            .env("OLLAMA_KV_CACHE_TYPE", "q8_0")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|_| "Could not start Ollama.")?,
+    );
+    Ok(())
 }
 pub fn start_services(
     db: &Database,
     services: &ServiceState,
-    model_path: std::path::PathBuf,
+    root: std::path::PathBuf,
 ) -> Result<LocalStatus> {
     use std::process::{Command, Stdio};
+    let model_path = root.join("models/ggml-base.en.bin");
     let current = status(db)?;
+    if !current.ollama_available {
+        start_ollama(services)?;
+    }
     let mut children = services
         .children
         .lock()
         .map_err(|_| "Local services unavailable.")?;
     children.retain_mut(|child| child.try_wait().is_ok_and(|exit| exit.is_none()));
-    if !current.ollama_available {
-        children.push(
-            Command::new(binary("ollama")?)
-                .arg("serve")
-                .env("OLLAMA_NO_CLOUD", "1")
-                .env("OLLAMA_HOST", "127.0.0.1:11434")
-                .env("OLLAMA_FLASH_ATTENTION", "1")
-                .env("OLLAMA_KV_CACHE_TYPE", "q8_0")
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn()
-                .map_err(|_| "Could not start Ollama.")?,
-        );
-    }
     if !current.speech_available && current.speech_model == SpeechEngine::Phonon2 {
+        let managed = crate::local_install::phonon_binary(&root);
+        let mut command = Command::new(if managed.is_file() {
+            managed
+        } else {
+            binary("fermion")?
+        });
+        if crate::local_install::phonon_binary(&root).is_file() {
+            crate::local_install::speech_environment(&mut command, &root);
+        }
         children.push(
-            Command::new(binary("fermion")?)
+            command
                 .args(["serve", "phonon-2", "--host", "127.0.0.1", "--port", "8010"])
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
@@ -104,7 +129,9 @@ pub fn start_services(
         );
     } else if !current.speech_available {
         if !model_path.is_file() {
-            return Err("Download the Whisper base.en model first. See docs/local-ai.md.".into());
+            return Err(
+                "Choose Download & install for Whisper in Settings → Local AI first.".into(),
+            );
         }
         children.push(
             Command::new(binary("whisper-server")?)
@@ -125,7 +152,7 @@ pub fn start_services(
         }
         std::thread::sleep(Duration::from_millis(500));
     }
-    Err("Local services did not finish starting. Check ports 11434, 8080 (Whisper), or 8010 (Phonon 2). Phonon's first start downloads its model; finish setup and retry.".into())
+    Err("Local services did not finish starting. Check ports 11434, 8080 (Whisper), or 8010 (Phonon 2). Use Check / repair in Local AI settings, then retry.".into())
 }
 pub fn stop_services(services: &ServiceState) -> Result<()> {
     let mut children = services
