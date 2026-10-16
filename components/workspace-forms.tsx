@@ -25,6 +25,7 @@ import {
   type TaskInput,
   type AreaKind,
 } from "@/lib/domain";
+import { SchedulingFields } from "@/components/scheduling-fields";
 import { TagPicker } from "@/components/tag-manager";
 import type { Tag } from "@/lib/domain";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ interface FormProps<T> {
 }
 export function TaskForm({
   task,
+  tasks = [],
   defaultTag,
   tags,
   busy,
@@ -43,6 +45,7 @@ export function TaskForm({
   onCancel,
 }: FormProps<TaskInput> & {
   task?: Task;
+  tasks?: Task[];
   defaultTag?: string;
   tags: Tag[];
 }) {
@@ -173,6 +176,7 @@ export function TaskForm({
             </select>
           </div>
         </div>
+        <SchedulingFields value={value.scheduling} onChange={(scheduling)=>set("scheduling",scheduling)} dependencies={tasks.filter((t)=>!t.deletedAt && t.id!==task?.id).map(({id,title})=>({id,title}))}/>
         <div className="space-y-2">
           <Label htmlFor="task-notes">Notes</Label>
           <Textarea

@@ -4,11 +4,15 @@
 mod areas;
 mod backup;
 mod calendar;
+mod capture_resolution;
 mod google;
 mod ical;
 mod local_ai;
+mod local_install;
 mod planner;
+mod schedule_engine;
 mod services;
+mod task_scheduling;
 mod todo_utils;
 mod trash;
 mod workspace;
@@ -133,21 +137,70 @@ async fn start_local_ai(
     app: tauri::AppHandle,
     db: State<'_, Database>,
     services: State<'_, local_ai::ServiceState>,
+    installer: State<'_, local_install::InstallState>,
 ) -> Result<local_ai::LocalStatus, String> {
+    installer.idle()?;
     let db = db.inner().clone();
     let services = services.inner().clone();
     let model = app
         .path()
         .app_data_dir()
-        .map_err(|_| "App data unavailable.")?
-        .join("models/ggml-base.en.bin");
+        .map_err(|_| "App data unavailable.")?;
     tauri::async_runtime::spawn_blocking(move || local_ai::start_services(&db, &services, model))
         .await
         .map_err(|_| "Local service startup interrupted.")?
 }
 #[tauri::command]
-async fn stop_local_ai(services: State<'_, local_ai::ServiceState>) -> Result<(), String> {
+async fn stop_local_ai(
+    services: State<'_, local_ai::ServiceState>,
+    installer: State<'_, local_install::InstallState>,
+) -> Result<(), String> {
+    installer.idle()?;
     local_ai::stop_services(services.inner())
+}
+#[tauri::command]
+async fn local_ai_setup_status(
+    app: tauri::AppHandle,
+    installer: State<'_, local_install::InstallState>,
+) -> Result<local_install::SetupStatus, String> {
+    let root = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "App data unavailable.")?;
+    local_install::snapshot(installer.inner(), &root)
+}
+#[tauri::command]
+async fn install_local_ai(
+    app: tauri::AppHandle,
+    db: State<'_, Database>,
+    services: State<'_, local_ai::ServiceState>,
+    installer: State<'_, local_install::InstallState>,
+    package: local_install::Package,
+) -> Result<(), String> {
+    let root = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "App data unavailable.")?;
+    installer.begin()?;
+    let state = installer.inner().clone();
+    let db = db.inner().clone();
+    let services = services.inner().clone();
+    // Detached job survives closing Settings. Progress is available on reopening it.
+    tauri::async_runtime::spawn_blocking(move || {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            local_install::install(&state, package, &root, &db, &services)
+        }))
+        .unwrap_or_else(|_| Err("Installation was interrupted. Retry setup.".into()));
+        state.finish(result);
+    });
+    Ok(())
+}
+#[tauri::command]
+async fn cancel_local_ai_install(
+    installer: State<'_, local_install::InstallState>,
+) -> Result<(), String> {
+    installer.cancel();
+    Ok(())
 }
 #[tauri::command]
 async fn local_ai_status(db: State<'_, Database>) -> Result<local_ai::LocalStatus, String> {
@@ -213,20 +266,45 @@ async fn extract_tasks(
     text: String,
     context_ids: Vec<String>,
     today: String,
+    time_zone: String,
+    now: String,
+    calendar_ids: Vec<String>,
 ) -> Result<Vec<local_ai::Draft>, String> {
     let db = db.inner().clone();
     let cache = cache.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        local_ai::extract(&db, &cache, text, context_ids, today)
+        local_ai::extract(
+            &db,
+            &cache,
+            text,
+            context_ids,
+            today,
+            time_zone,
+            now,
+            calendar_ids,
+        )
     })
     .await
     .map_err(|_| "Local task capture interrupted.")?
 }
 #[tauri::command]
-async fn transcribe_audio(audio: String) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || local_ai::transcribe(audio))
+async fn configure_local_speech(
+    db: State<'_, Database>,
+    model: local_ai::SpeechEngine,
+) -> Result<(), String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || local_ai::configure_speech(&db, model))
         .await
-        .map_err(|_| "Transcription interrupted.")?
+        .map_err(|_| "Speech setup interrupted.")?
+}
+#[tauri::command]
+async fn transcribe_audio(db: State<'_, Database>, audio: String) -> Result<String, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        local_ai::transcribe(audio, local_ai::speech_engine(&db)?)
+    })
+    .await
+    .map_err(|_| "Transcription interrupted.")?
 }
 #[tauri::command]
 async fn purge_record(
@@ -389,6 +467,7 @@ fn main() {
             app.manage(google_lock);
             app.manage(local_ai::ContextStore::default());
             app.manage(local_ai::ServiceState::default());
+            app.manage(local_install::InstallState::default());
             app.manage(planner::PendingPlan::default());
             std::thread::Builder::new()
                 .name("daymark-backup".into())
@@ -421,6 +500,9 @@ fn main() {
             apply_plan,
             undo_plan,
             plan_undo_available,
+            local_ai_setup_status,
+            install_local_ai,
+            cancel_local_ai_install,
             start_local_ai,
             stop_local_ai,
             local_ai_status,
@@ -429,6 +511,7 @@ fn main() {
             remove_context,
             extract_tasks,
             transcribe_audio,
+            configure_local_speech,
             save_event,
             export_calendar,
             backup_status,
@@ -443,6 +526,9 @@ fn main() {
                 event,
                 tauri::RunEvent::Exit | tauri::RunEvent::ExitRequested { .. }
             ) {
+                if let Some(installer) = app.try_state::<local_install::InstallState>() {
+                    installer.cancel();
+                }
                 if let Some(services) = app.try_state::<local_ai::ServiceState>() {
                     let _ = local_ai::stop_services(services.inner());
                 }

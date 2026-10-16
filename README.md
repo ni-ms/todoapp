@@ -9,7 +9,7 @@ Built with Tauri 2, Rust, Next.js 16 static export, React 19, TypeScript, Tailwi
 - Calendar opens in Week view, with Day/Month options, tag filtering, timed/all-day events, task links, drag/resize, and ICS export.
 - One tag system for courses, coding projects, career goals, and general labels. Existing courses/projects are migrated to tags with names, notes, short labels, type, timestamps, Trash state, and task assignments preserved. Tasks can have multiple tags. Areas are independent named spaces associated with one or more tags. A task matching any associated active tag appears in the area; tags can be shared across areas. Creating or renaming tags does not create or rename areas. Existing tag spaces are copied once by migration 5.
 - My Day centers on task capture, today's schedule, and due/in-progress work. Its Area dropdown filters tasks and events (including sessions linked to tagged tasks); new manual and AI-drafted tasks default to the first active tag of the selected area (editable before saving). The weekly planner continues to plan across all areas. Undated backlog items stay in Tasks unless in progress or scheduled today. Search, status/tag filters, completion/reopening, and light/dark/system themes remain available.
-- Local voice/text capture with Ollama and whisper.cpp: attach selected text/code files or folders, review excerpts and transcript, edit task drafts, and save an atomic batch. See [local AI setup](docs/local-ai.md). No hosted AI account/API key is needed for local capture.
+- Local voice/text capture with Ollama and Phonon 2 or whisper.cpp: attach selected text/code files or folders, review excerpts and transcript, edit task drafts, and save an atomic batch. macOS Settings includes individual model installers and Install all local options (requires Homebrew). See [local AI setup](docs/local-ai.md). No hosted AI account/API key is needed for local capture.
 - Local weekly planning previews with study hours, weekend/break options, deadlines, priorities, busy-time avoidance, split sessions, unscheduled-work explanations, stale-preview protection, and guarded undo.
 - Recoverable Trash for tasks, events, and tags (including course/project tags), plus confirmed permanent deletion. Removing a task keeps its calendar events, detached from the task. Removing a course/tag keeps tasks and events and removes assignments.
 - Desktop SQLite persistence, isolated browser IndexedDB workspace, accessible dialogs, responsive navigation, and keyboard shortcuts (`N`, `Cmd/Ctrl+K` for visible search).
@@ -40,7 +40,7 @@ Open http://127.0.0.1:3000. **Browser preview stores its data separately in Inde
 
 ## GitHub Pages browser preview
 
-The app can be hosted as a static website: Next.js exports HTML, CSS, and JavaScript to `out/`. No backend or Rust/WASM build is needed for the existing browser preview. Tasks, tags, areas, and calendar events persist locally in each visitor's browser; hosting does not upload their workspace or share it across devices. The browser has its own deterministic weekly planner, local Ollama/Whisper adapters, optional WebLLM in-browser task generation, optional OpenRouter hosted task generation, Google web sign-in/publishing/Drive backup, and folder backup in supported browsers. See [browser setup and limits](docs/browser.md). Browser voice still requires a local Whisper server; it is not an in-browser speech model.
+The app can be hosted as a static website: Next.js exports HTML, CSS, and JavaScript to `out/`. No backend or Rust/WASM build is needed for the existing browser preview. Tasks, tags, areas, and calendar events persist locally in each visitor's browser; hosting does not upload their workspace or share it across devices. The browser has its own deterministic weekly planner, a local Ollama adapter and on-device speech, optional WebLLM in-browser task generation, optional OpenRouter hosted task generation, Google web sign-in/publishing/Drive backup, and folder backup in supported browsers. See [browser setup and limits](docs/browser.md). Browser voice offers separately loaded on-device Phonon 2 (English, about 690 MB) or Whisper Tiny (multilingual, about 41 MB) through WebAssembly; no local speech server is required.
 
 To publish:
 
@@ -63,6 +63,66 @@ Open http://127.0.0.1:4173/todoapp/. Rebuild without `PAGES_BASE_PATH` before pa
 
 ## Data and architecture
 
+The same static frontend runs inside Tauri or in a browser. Each runtime uses its own persistence and service adapters; browser storage is separate from the desktop workspace, never a fallback for a native error.
+
+```mermaid
+flowchart TB
+    subgraph shared["Shared static frontend · Next.js / React / TypeScript"]
+        UI["Learner workspace<br/>Calendar · My Day · Tasks · Areas · Settings<br/>shadcn/ui + FullCalendar"]
+        Domain["Typed records and validation<br/>lib/domain.ts"]
+        Adapters["Runtime-aware adapters<br/>lib/storage.ts · lib/planning.ts · lib/ai.ts"]
+        UI --> Domain
+        UI --> Adapters
+    end
+
+    subgraph desktop["Desktop · Tauri embeds out/"]
+        IPC["Scoped Rust commands<br/>src-tauri/src/main.rs<br/>Blocking workers + serialized database access"]
+        Store["Workspace / areas / calendar / Trash<br/>Validation + transactional migrations"]
+        DB[("SQLite · learner.sqlite3")]
+        Plan["Deterministic Rust scheduler<br/>planner.rs + schedule_engine.rs<br/>Preview → atomic apply → guarded undo"]
+        NativeAI["Local AI adapter<br/>local_ai.rs<br/>Selected context + validated task drafts"]
+        NativeServices["Opt-in Google + folder backup<br/>google.rs · backup.rs<br/>OAuth secrets in OS credential store"]
+        IPC --> Store --> DB
+        IPC --> Plan --> DB
+        IPC --> NativeAI
+        IPC --> NativeServices
+        NativeServices --> DB
+    end
+
+    subgraph browser["Browser · static hosting"]
+        WebStore["Browser workspace adapter<br/>lib/storage.ts<br/>IndexedDB transactions"]
+        IDB[("IndexedDB · separate workspace")]
+        WebPlan["Deterministic TypeScript scheduler<br/>planning.ts + schedule-engine.ts<br/>Preview → atomic apply → guarded undo"]
+        WebAI["Explicit text provider choice<br/>Local Ollama · WebLLM · OpenRouter<br/>Hosted key stays in tab memory"]
+        Speech["On-device speech worker<br/>Phonon 2 / Whisper Tiny · WebAssembly"]
+        WebServices["Opt-in Google + folder backup<br/>browser-google.ts · browser-backup.ts<br/>Google tokens stay in tab memory"]
+        WebStore --> IDB
+        WebPlan --> WebStore
+        WebServices --> WebStore
+    end
+
+    Adapters -->|Desktop: Tauri IPC| IPC
+    Adapters -->|Browser| WebStore
+    Adapters --> WebPlan
+    Adapters --> WebAI
+    Adapters --> Speech
+    UI --> WebServices
+
+    LocalModels["Local model servers · loopback<br/>Ollama + Whisper / Phonon 2"]
+    HostedAI["OpenRouter · hosted text inference"]
+    Google["Google Calendar + Drive app-data<br/>One-way publishing + workspace backup"]
+    Folder["User-selected backup folder<br/>JSON + ICS"]
+    NativeAI -.-> LocalModels
+    WebAI -.->|Local Ollama only| LocalModels
+    WebAI -.->|Explicit hosted choice| HostedAI
+    NativeServices -.-> Google
+    NativeServices -.-> Folder
+    WebServices -.-> Google
+    WebServices -.-> Folder
+```
+
+Solid arrows show application calls and storage access; dashed arrows show optional provider or backup connections. WebLLM and browser speech run on device after explicit model loading; browser audio is not sent to a provider. Scheduling is on demand and deterministic, while AI proposes task drafts for review. Google publishing does not import remote edits, and live account verification remains outstanding. Backup timers run only while the app or browser tab is open; they do not merge workspaces.
+
 - `components/learner-workspace.tsx`: application shell and views.
 - `components/workspace-forms.tsx`, `components/ui/`: typed forms and owned shadcn/ui component source.
 - `lib/domain.ts`: shared frontend records and validation.
@@ -79,7 +139,7 @@ Open http://127.0.0.1:4173/todoapp/. Rebuild without `PAGES_BASE_PATH` before pa
 - `src-tauri/src/planner.rs`: deterministic scheduling, preview/apply, and guarded undo.
 - `src-tauri/src/trash.rs`: atomic permanent deletion and batch task creation.
 - `components/task-capture.tsx`, `components/planner.tsx`, `components/trash-view.tsx`: the associated review and confirmation workflows.
-- `src-tauri/migrations/`: migrations through schema version 5, run transactionally using `PRAGMA user_version`. Version 4 consolidates courses/projects into tags without losing metadata or assignments; version 5 adds independent areas with tag associations.
+- `src-tauri/migrations/`: migrations through schema version 6, run transactionally using `PRAGMA user_version`. Version 4 consolidates courses/projects into tags without losing metadata or assignments; version 5 adds independent areas with tag associations; version 6 preserves richer task scheduling constraints.
 - `src-tauri/src/main.rs`: typed commands executed on blocking workers with serialized database access.
 - `src-tauri/capabilities/workspace.json`: main-window permissions for workspace commands; no arbitrary SQL or filesystem API is exposed.
 

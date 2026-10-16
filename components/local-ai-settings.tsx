@@ -1,22 +1,24 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { isDesktop } from "@/lib/storage";
 import { BrowserAISettings } from "./browser-ai-settings";
-export interface LocalAIStatus {
-  models: string[];
-  model: string;
-  ollamaAvailable: boolean;
-  whisperAvailable: boolean;
-}
+import { LocalAIInstaller } from "./local-ai-installer";
+import type { LocalAIStatus } from "@/lib/ai";
+export type { LocalAIStatus } from "@/lib/ai";
 export function LocalAISettings() {
   return isDesktop() ? <NativeAISettings /> : <BrowserAISettings />;
 }
 function NativeAISettings() {
   const [status, setStatus] = useState<LocalAIStatus | null>(null),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [working, setBusy] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const busy = working || installing;
+  const refresh = useCallback(() => {
+    void invoke<LocalAIStatus>("local_ai_status").then(setStatus).catch((e) => setError(String(e)));
+  }, []);
   async function check() {
     setBusy(true);
     setError("");
@@ -46,9 +48,9 @@ function NativeAISettings() {
     <section className="surface space-y-4 p-6">
       <h2 className="text-sm font-semibold">Local AI</h2>
       <p className="text-sm text-muted-foreground">
-        Use Ollama for task drafts and Whisper for voice transcription. No API
-        key is needed.
+        Task drafts and voice transcription stay on this device.
       </p>
+      <LocalAIInstaller onBusyChange={setInstalling} refresh={refresh} taskModelInstalled={Boolean(status?.models.includes("qwen3:4b"))} />
       {isDesktop() ? (
         <>
           <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -56,12 +58,33 @@ function NativeAISettings() {
               Ollama: {status?.ollamaAvailable ? "running" : "not connected"}
             </span>
             <span>
-              Whisper: {status?.whisperAvailable ? "running" : "not connected"}
+              Speech: {status?.speechAvailable ? "running" : "not connected"}
             </span>
             <Button size="sm" variant="outline" disabled={busy} onClick={check}>
               Check connection
             </Button>
           </div>
+          <label className="block space-y-2 text-xs">
+            <span>Speech model</span>
+            <select className="field-select" value={status?.speechModel ?? "whisper"}
+              disabled={busy || !status}
+              onChange={async (e) => {
+                const model = e.target.value;
+                setBusy(true);
+                setError("");
+                try {
+                  await invoke("configure_local_speech", { model });
+                  setStatus(await invoke<LocalAIStatus>("local_ai_status"));
+                } catch (e) { setError(String(e)); }
+                finally { setBusy(false); }
+              }}>
+              <option value="phonon-2">Phonon 2 · English</option>
+              <option value="whisper">Whisper base.en · English</option>
+            </select>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Download a speech model above, select it, then start local AI.
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
@@ -101,8 +124,7 @@ function NativeAISettings() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Services started here stop when you quit Daymark. Existing services
-            are left running.
+            App-started services stop when you quit Daymark.
           </p>
           <label className="block space-y-2 text-xs">
             <span>Task model</span>
@@ -141,12 +163,10 @@ function NativeAISettings() {
         </summary>
         <ol className="mt-3 list-decimal space-y-2 pl-4">
           <li>
-            Install Ollama, download a local text model, and start Ollama on
-            port 11434. Disable Ollama cloud features for offline use.
+            Use Download & install above for task drafts, or install all options. Setup installs Ollama and downloads Qwen 3 4B without changing your task-model selection.
           </li>
           <li>
-            For voice, install whisper.cpp, download a speech model, and start
-            whisper-server on port 8080.
+            Download Phonon 2 or Whisper above, select your speech model, then press Start local AI. The app starts local services and stops the ones it owns when you quit.
           </li>
           <li>
             Choose your task model above. Open My day to type or record a
@@ -154,9 +174,7 @@ function NativeAISettings() {
           </li>
         </ol>
         <p className="mt-3 text-muted-foreground">
-          Models require a one-time download. See docs/local-ai.md in this
-          project for exact commands. Audio is converted to WAV here; FFmpeg is
-          not needed. Cloud model aliases are rejected.
+          Automatic installation requires macOS and Homebrew.
         </p>
       </details>
       {error && (

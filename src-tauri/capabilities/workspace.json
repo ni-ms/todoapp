@@ -17,6 +17,7 @@
     "allow-purge-record",
     "allow-save-tasks",
     "allow-preview-plan", "allow-apply-plan", "allow-undo-plan", "allow-plan-undo-available",
+    "allow-local-ai-setup-status", "allow-install-local-ai", "allow-cancel-local-ai-install", "allow-configure-local-speech",
     "allow-start-local-ai", "allow-stop-local-ai",
     "allow-local-ai-status", "allow-configure-local-ai", "allow-pick-context", "allow-remove-context", "allow-extract-tasks", "allow-transcribe-audio",
     "allow-save-event",

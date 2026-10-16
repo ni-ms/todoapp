@@ -43,8 +43,26 @@ impl Store {
             return Err("Choose 1–20 new tasks.".into());
         }
         let tx = self.connection.unchecked_transaction().map_err(sql_error)?;
-        for input in inputs {
-            self.save_task(input)?;
+        let ids: Vec<String> = inputs
+            .iter()
+            .map(|_| uuid::Uuid::new_v4().to_string())
+            .collect();
+        for (i, mut input) in inputs.into_iter().enumerate() {
+            if let Some(s) = &mut input.scheduling {
+                for dep in &mut s.dependencies {
+                    if let Some(index) = dep.strip_prefix("draft:") {
+                        *dep = ids
+                            .get(
+                                index
+                                    .parse::<usize>()
+                                    .map_err(|_| "Invalid draft dependency.")?,
+                            )
+                            .ok_or("Unknown draft dependency.")?
+                            .clone();
+                    }
+                }
+            }
+            self.save_task_record(input, Some(ids[i].clone()))?;
         }
         tx.commit().map_err(sql_error)?;
         self.snapshot()
@@ -81,6 +99,7 @@ mod tests {
             priority: "medium".into(),
             due_date: None,
             estimate_minutes: 30,
+            scheduling: None,
             tag_ids: Some(vec![]),
         };
         let mut invalid = input.clone();

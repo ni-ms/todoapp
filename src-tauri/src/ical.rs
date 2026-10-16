@@ -131,6 +131,7 @@ mod tests {
                 priority: "medium".into(),
                 due_date: Some("2026-12-31".into()),
                 estimate_minutes: 30,
+                scheduling: None,
                 tag_ids: None,
             })
             .unwrap();

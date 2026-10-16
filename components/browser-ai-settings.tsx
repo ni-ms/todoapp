@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import { BrowserSpeechSettings } from "./browser-speech-settings";
 import { Input } from "./ui/input";
 import {
   aiSettings,
@@ -64,8 +65,7 @@ export function BrowserAISettings() {
     <section className="surface space-y-4 p-6">
       <h2 className="text-sm font-semibold">AI</h2>
       <p className="text-sm text-muted-foreground">
-        Choose where task requests are processed. Drafts always need your
-        review. Scheduling works without AI.
+        Choose how to create task drafts.
       </p>
       {settings ? (
         <fieldset disabled={busy} className="space-y-4">
@@ -87,9 +87,7 @@ export function BrowserAISettings() {
           {settings.provider === "ollama" && (
             <>
               <p className="text-xs text-muted-foreground">
-                Your request, selected excerpts, and tag names go to Ollama at
-                127.0.0.1:11434. Start the server on your computer; a website
-                cannot start or stop installed programs.
+                Requests and selected context stay on this device. Start Ollama on your computer to connect.
               </p>
               <Button
                 size="sm"
@@ -111,9 +109,7 @@ export function BrowserAISettings() {
               {status && (
                 <p className="text-xs">
                   Ollama:{" "}
-                  {status.ollamaAvailable ? "connected" : "not connected"} ·
-                  Whisper:{" "}
-                  {status.whisperAvailable ? "connected" : "not connected"}
+                  {status.ollamaAvailable ? "connected" : "not connected"}
                 </p>
               )}
               <label className="block space-y-2 text-xs">
@@ -139,10 +135,7 @@ export function BrowserAISettings() {
           {settings.provider === "browser" && (
             <>
               <p className="text-xs text-muted-foreground">
-                Qwen 2.5 1.5B runs on this device using WebGPU. Loading downloads
-                model files from the model host and caches them in your browser
-                (around 1 GB). Requests and excerpts stay on this device.
-                Requires enough GPU memory; smaller models can make mistakes.
+                Runs on this device. Downloads about 1 GB and requires a WebGPU-compatible GPU. Requests and selected context stay local.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -152,12 +145,12 @@ export function BrowserAISettings() {
                       await loadBrowserModel(setNotice);
                       setLoaded(true);
                       setNotice(
-                        "Browser model ready. Open My day to create task drafts.",
+                        "Browser model ready.",
                       );
                     })
                   }
                 >
-                  {loaded ? "Model loaded" : "Download / load browser model"}
+                  {loaded ? "Model loaded" : "Load model"}
                 </Button>
                 {loaded && (
                   <Button
@@ -167,7 +160,7 @@ export function BrowserAISettings() {
                         await unloadBrowserModel();
                         setLoaded(false);
                         setNotice(
-                          "Model unloaded from memory. Cached downloads remain in browser storage.",
+                          "Model unloaded. Download stays cached.",
                         );
                       })
                     }
@@ -181,10 +174,7 @@ export function BrowserAISettings() {
           {settings.provider === "openrouter" && (
             <>
               <p className="text-xs text-muted-foreground">
-                When you create drafts, your request, checked file excerpts, and
-                active tag names are sent to OpenRouter and its selected model
-                provider. Nothing is sent merely by selecting this option. We
-                request providers that disallow data collection.
+                Creating drafts sends your request, selected context, and tag names to OpenRouter and its model provider.
               </p>
               <label className="block space-y-2 text-xs">
                 Model ID
@@ -198,13 +188,10 @@ export function BrowserAISettings() {
                 />
               </label>
               <p className="text-xs text-muted-foreground">
-                The default openrouter/free router uses available free models;
-                capacity and usage limits vary. Paid models charge your own
-                provider account. There is no automatic fallback to a paid
-                model.
+                Free models have usage limits. Paid models charge your OpenRouter account; there’s no automatic paid fallback.
               </p>
               <label className="block space-y-2 text-xs">
-                Your OpenRouter key · this tab only
+                OpenRouter API key
                 <Input
                   aria-label="OpenRouter API key"
                   type="password"
@@ -231,12 +218,12 @@ export function BrowserAISettings() {
                         setKeyReady(true);
                       }
                       setNotice(
-                        "Hosted settings saved. Key stays in this tab’s memory and clears on reload.",
+                        "Settings saved. Key clears on reload.",
                       );
                     })
                   }
                 >
-                  Use hosted settings
+                  Save settings
                 </Button>
                 {keyReady && (
                   <Button
@@ -252,9 +239,7 @@ export function BrowserAISettings() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Use a separate key with a small spending limit. The key is
-                accessible to this page while in use; it is never saved in
-                browser storage, exports, the source, or GitHub Actions.
+                Your key stays in this tab and clears on reload. Set a spending limit in OpenRouter.
               </p>
               <a
                 className="text-xs underline"
@@ -270,9 +255,10 @@ export function BrowserAISettings() {
       ) : (
         <p className="text-xs">Loading AI settings…</p>
       )}
-      <details className="rounded-lg border p-3 text-xs leading-relaxed">
+      <BrowserSpeechSettings />
+      {settings?.provider === "ollama" && <details className="rounded-lg border p-3 text-xs leading-relaxed">
         <summary className="cursor-pointer font-medium">
-          Local server and voice setup
+          Local Ollama setup
         </summary>
         <p className="mt-3">
           For Ollama, allow only this website’s origin in OLLAMA_ORIGINS and
@@ -286,18 +272,10 @@ export function BrowserAISettings() {
           </code>
           . Do not use a wildcard origin.
         </p>
-        <p className="mt-2">
-          Recording uses your local whisper.cpp server at
-          127.0.0.1:8080/inference for every text-provider choice. Enable CORS
-          for this origin on that server. Allow microphone and local-network
-          access when your browser asks. If your browser blocks local HTTP
-          access from this HTTPS site, use a supported browser or type your
-          request. Browsers cannot bypass these restrictions.
-        </p>
-      </details>
+      </details>}
       {busy && (
         <p role="status" className="text-xs text-muted-foreground">
-          Working… Model downloads can take several minutes.
+          Working…
         </p>
       )}
       {notice && (

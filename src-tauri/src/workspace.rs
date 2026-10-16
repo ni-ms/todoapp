@@ -46,6 +46,8 @@ pub struct Task {
     pub due_date: Option<String>,
     pub estimate_minutes: i64,
     #[serde(default)]
+    pub scheduling: Option<crate::task_scheduling::TaskScheduling>,
+    #[serde(default)]
     pub tag_ids: Vec<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -63,6 +65,8 @@ pub struct TaskInput {
     pub priority: String,
     pub due_date: Option<String>,
     pub estimate_minutes: i64,
+    #[serde(default)]
+    pub scheduling: Option<crate::task_scheduling::TaskScheduling>,
     #[serde(default)]
     pub tag_ids: Option<Vec<String>>,
 }
@@ -99,7 +103,7 @@ impl Store {
         let version: i64 = transaction
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .map_err(sql_error)?;
-        if version > 5 {
+        if version > 6 {
             return Err(
                 "This workspace was created by a newer app. Update the app before opening it."
                     .into(),
@@ -130,6 +134,11 @@ impl Store {
                 .execute_batch(include_str!("../migrations/005_areas.sql"))
                 .map_err(sql_error)?;
         }
+        if version < 6 {
+            transaction
+                .execute_batch(include_str!("../migrations/006_task_scheduling.sql"))
+                .map_err(sql_error)?;
+        }
         transaction.commit().map_err(sql_error)
     }
     pub fn snapshot(&self) -> Result<Workspace> {
@@ -151,7 +160,7 @@ impl Store {
             .map_err(sql_error)?
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(sql_error)?;
-        let mut query = self.connection.prepare("SELECT id,title,description,course_id,kind,status,priority,due_date,estimate_minutes,created_at,updated_at,deleted_at,tag_ids FROM tasks ORDER BY created_at,id").map_err(sql_error)?;
+        let mut query = self.connection.prepare("SELECT id,title,description,course_id,kind,status,priority,due_date,estimate_minutes,created_at,updated_at,deleted_at,tag_ids,scheduling FROM tasks ORDER BY created_at,id").map_err(sql_error)?;
         let tasks = query
             .query_map([], |r| {
                 Ok(Task {
@@ -164,6 +173,18 @@ impl Store {
                     priority: r.get(6)?,
                     due_date: r.get(7)?,
                     estimate_minutes: r.get(8)?,
+                    scheduling: r
+                        .get::<_, Option<String>>(13)?
+                        .map(|s| {
+                            serde_json::from_str(&s).map_err(|e| {
+                                rusqlite::Error::FromSqlConversionFailure(
+                                    13,
+                                    rusqlite::types::Type::Text,
+                                    Box::new(e),
+                                )
+                            })
+                        })
+                        .transpose()?,
                     created_at: r.get(9)?,
                     updated_at: r.get(10)?,
                     deleted_at: r.get(11)?,
@@ -201,6 +222,22 @@ impl Store {
         self.snapshot()
     }
     pub fn save_task(&self, input: TaskInput) -> Result<Workspace> {
+        self.save_task_record(input, None)
+    }
+    pub(crate) fn save_task_record(
+        &self,
+        input: TaskInput,
+        create_id: Option<String>,
+    ) -> Result<Workspace> {
+        if let Some(s) = &input.scheduling {
+            s.validate(input.estimate_minutes)?;
+        }
+        let scheduling = input
+            .scheduling
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|_| "Invalid scheduling details.")?;
         let task_title = title(&input.title)?;
         bounded(&input.description, 4000, "Description")?;
         choice(
@@ -265,9 +302,9 @@ impl Store {
         let now = Utc::now().to_rfc3339();
         if let Some(id) = input.id {
             self.require_record("tasks", &id, false)?;
-            self.connection.execute("UPDATE tasks SET title=?1,description=?2,course_id=?3,kind=?4,status=?5,priority=?6,due_date=?7,estimate_minutes=?8,updated_at=?9,tag_ids=?11 WHERE id=?10", params![task_title,input.description,input.course_id,input.kind,input.status,input.priority,input.due_date,input.estimate_minutes,now,id,tag_json]).map_err(sql_error)?;
+            self.connection.execute("UPDATE tasks SET title=?1,description=?2,course_id=?3,kind=?4,status=?5,priority=?6,due_date=?7,estimate_minutes=?8,updated_at=?9,tag_ids=?11,scheduling=?12 WHERE id=?10", params![task_title,input.description,input.course_id,input.kind,input.status,input.priority,input.due_date,input.estimate_minutes,now,id,tag_json,scheduling]).map_err(sql_error)?;
         } else {
-            self.connection.execute("INSERT INTO tasks (id,title,description,course_id,kind,status,priority,due_date,estimate_minutes,created_at,updated_at,tag_ids) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10,?11)",params![Uuid::new_v4().to_string(),task_title,input.description,input.course_id,input.kind,input.status,input.priority,input.due_date,input.estimate_minutes,now,tag_json]).map_err(sql_error)?;
+            self.connection.execute("INSERT INTO tasks (id,title,description,course_id,kind,status,priority,due_date,estimate_minutes,created_at,updated_at,tag_ids,scheduling) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10,?11,?12)",params![create_id.unwrap_or_else(|| Uuid::new_v4().to_string()),task_title,input.description,input.course_id,input.kind,input.status,input.priority,input.due_date,input.estimate_minutes,now,tag_json,scheduling]).map_err(sql_error)?;
         }
         self.snapshot()
     }
@@ -357,6 +394,7 @@ mod tests {
             priority: "high".into(),
             due_date: Some("2026-11-01".into()),
             estimate_minutes: 45,
+            scheduling: None,
             tag_ids: None,
         }
     }

@@ -1,4 +1,4 @@
-// Whisper accepts a 16-bit, mono, 16 kHz WAV. Conversion stays on this device.
+// Both speech adapters accept 16-bit, mono, 16 kHz WAV. Conversion stays on-device.
 export function pcmWav(samples: Float32Array): Uint8Array {
   const buffer = new ArrayBuffer(44 + samples.length * 2),
     view = new DataView(buffer);

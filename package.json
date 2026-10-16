@@ -9,16 +9,19 @@
     "tauri": "tauri",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm run build",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "benchmark:capture": "tsx scripts/benchmark-capture.ts"
   },
   "dependencies": {
     "@fullcalendar/react": "^7.1.2",
+    "@huggingface/transformers": "^4.3.1",
     "@mlc-ai/web-llm": "^0.2.86",
     "@tauri-apps/api": "^2.12.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.57.0",
     "next": "^16.4.1",
+    "onnxruntime-web": "1.31.0-dev.20260914-8d85527a0",
     "radix-ui": "^1.8.1",
     "react": "^19",
     "react-dom": "^19",

@@ -55,6 +55,7 @@ export default function LearnerWorkspace({
 }: {
   initialView?: WorkspaceView;
 }) {
+  const [capturePlanRequest, setCapturePlanRequest] = useState(0);
   const [data, setData] = useState<Workspace | null>(null),
     [loading, setLoading] = useState(true),
     [loadError, setLoadError] = useState(""),
@@ -374,8 +375,10 @@ export default function LearnerWorkspace({
                 {view === "today" && (
                   <>
                     <TaskCapture
+                      events={data.events}
                       tags={tags}
                       defaultTag={defaultTag}
+                      onPlan={() => setCapturePlanRequest((n)=>n+1)}
                       onSettings={() => navigate("settings")}
                       onSave={(inputs) =>
                         commit(
@@ -385,6 +388,14 @@ export default function LearnerWorkspace({
                       }
                     />
                     <Planner
+                      onEditTask={(id, returnFocus) => {
+                        const task = tasks.find((t) => t.id === id);
+                        if (task) {
+                          openEditor({ type: "task", task });
+                          if (returnFocus) trigger.current = returnFocus;
+                        }
+                      }}
+                      requestOpen={capturePlanRequest}
                       onApply={(w, notice) => {
                         setData(w);
                         setNotice(notice);
@@ -410,12 +421,6 @@ export default function LearnerWorkspace({
                                 ? `Tasks in ${activeArea.name}`
                                 : "Your tasks"}
                           </h2>
-                          {view === "today" && (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Due today, overdue, in progress, or scheduled
-                              today.
-                            </p>
-                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {view === "tasks" && (
@@ -683,6 +688,7 @@ export default function LearnerWorkspace({
             <TaskForm
               key={editor.task?.id ?? "new"}
               task={editor.task}
+              tasks={data?.tasks ?? []}
               defaultTag={defaultTag}
               tags={tags}
               busy={busy}

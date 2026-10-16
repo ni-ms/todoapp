@@ -1,3 +1,4 @@
+import { validateScheduling, type TaskScheduling } from "./task-scheduling";
 export type AreaKind = "course" | "project" | "career";
 export type Color = "violet" | "blue" | "emerald" | "amber" | "rose";
 export type TaskKind =
@@ -30,6 +31,7 @@ export interface Task extends RecordMetadata {
   priority: Priority;
   dueDate: string | null;
   estimateMinutes: number;
+  scheduling?: TaskScheduling | null;
   tagIds: string[];
 }
 export type CourseInput = Omit<Course, keyof RecordMetadata> & { id?: string };
@@ -101,6 +103,7 @@ export function taskInput(task: Task): TaskInput {
     dueDate: task.dueDate,
     estimateMinutes: task.estimateMinutes,
     tagIds: task.tagIds,
+    scheduling: task.scheduling,
   };
 }
 export function courseInput(course: Course): CourseInput {
@@ -122,6 +125,7 @@ export function validateCourse(input: CourseInput) {
     throw new Error("Invalid area type or color.");
 }
 export function validateTask(input: TaskInput) {
+  if (input.scheduling) validateScheduling(input.scheduling, input.estimateMinutes);
   if (!input.title.trim() || input.title.trim().length > 200)
     throw new Error("Enter a title between 1 and 200 characters.");
   if (input.description.length > 4000)

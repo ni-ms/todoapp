@@ -156,10 +156,12 @@ const preview: WorkspaceStorage = {
         if (input.courseId) throw new Error("Choose tags instead of a course.");
       }
       const now = new Date().toISOString();
+      const ids = inputs.map(() => crypto.randomUUID());
+      const resolved = inputs.map((input) => ({ ...input, scheduling: input.scheduling ? { ...input.scheduling, dependencies: input.scheduling.dependencies.map((id) => { if (!id.startsWith("draft:")) return id; const index = Number(id.slice(6)); if (!Number.isInteger(index) || !ids[index]) throw new Error("Unknown draft dependency."); return ids[index]; }) } : input.scheduling }));
       w.tasks.push(
-        ...inputs.map((input) => ({
+        ...resolved.map((input, i) => ({
           ...input,
-          id: crypto.randomUUID(),
+          id: ids[i],
           createdAt: now,
           updatedAt: now,
           deletedAt: null,

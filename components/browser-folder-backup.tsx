@@ -105,16 +105,12 @@ export function BrowserFolderBackup({
             </p>
           )}
           <p className="text-muted-foreground">
-            Writes JSON and ICS files only inside Daymark backups in your chosen
-            folder. Each file replaces its previous version on close. Runs
-            approximately once a minute while this tab is open; background
-            throttling and permission expiry can delay backups.
+            Replaces the previous backup about once a minute while this tab is open. Folder permission is required.
           </p>
         </>
       ) : (
         <p className="text-muted-foreground">
-          This browser does not support writing to a chosen folder. Use Chrome
-          or Edge for automatic folder backups, or download JSON and ICS above.
+          Folder backup requires Chrome or Edge. You can still export your data above.
         </p>
       )}
     </div>
