@@ -63,6 +63,66 @@ Open http://127.0.0.1:4173/todoapp/. Rebuild without `PAGES_BASE_PATH` before pa
 
 ## Data and architecture
 
+The same static frontend runs inside Tauri or in a browser. Each runtime uses its own persistence and service adapters; browser storage is separate from the desktop workspace, never a fallback for a native error.
+
+```mermaid
+flowchart TB
+    subgraph shared["Shared static frontend · Next.js / React / TypeScript"]
+        UI["Learner workspace<br/>Calendar · My Day · Tasks · Areas · Settings<br/>shadcn/ui + FullCalendar"]
+        Domain["Typed records and validation<br/>lib/domain.ts"]
+        Adapters["Runtime-aware adapters<br/>lib/storage.ts · lib/planning.ts · lib/ai.ts"]
+        UI --> Domain
+        UI --> Adapters
+    end
+
+    subgraph desktop["Desktop · Tauri embeds out/"]
+        IPC["Scoped Rust commands<br/>src-tauri/src/main.rs<br/>Blocking workers + serialized database access"]
+        Store["Workspace / areas / calendar / Trash<br/>Validation + transactional migrations"]
+        DB[("SQLite · learner.sqlite3")]
+        Plan["Deterministic Rust scheduler<br/>planner.rs + schedule_engine.rs<br/>Preview → atomic apply → guarded undo"]
+        NativeAI["Local AI adapter<br/>local_ai.rs<br/>Selected context + validated task drafts"]
+        NativeServices["Opt-in Google + folder backup<br/>google.rs · backup.rs<br/>OAuth secrets in OS credential store"]
+        IPC --> Store --> DB
+        IPC --> Plan --> DB
+        IPC --> NativeAI
+        IPC --> NativeServices
+        NativeServices --> DB
+    end
+
+    subgraph browser["Browser · static hosting"]
+        WebStore["Browser workspace adapter<br/>lib/storage.ts<br/>IndexedDB transactions"]
+        IDB[("IndexedDB · separate workspace")]
+        WebPlan["Deterministic TypeScript scheduler<br/>planning.ts + schedule-engine.ts<br/>Preview → atomic apply → guarded undo"]
+        WebAI["Explicit text provider choice<br/>Local Ollama · WebLLM · OpenRouter<br/>Hosted key stays in tab memory"]
+        Speech["On-device speech worker<br/>Phonon 2 / Whisper Tiny · WebAssembly"]
+        WebServices["Opt-in Google + folder backup<br/>browser-google.ts · browser-backup.ts<br/>Google tokens stay in tab memory"]
+        WebStore --> IDB
+        WebPlan --> WebStore
+        WebServices --> WebStore
+    end
+
+    Adapters -->|Desktop: Tauri IPC| IPC
+    Adapters -->|Browser| WebStore
+    Adapters --> WebPlan
+    Adapters --> WebAI
+    Adapters --> Speech
+    UI --> WebServices
+
+    LocalModels["Local model servers · loopback<br/>Ollama + Whisper / Phonon 2"]
+    HostedAI["OpenRouter · hosted text inference"]
+    Google["Google Calendar + Drive app-data<br/>One-way publishing + workspace backup"]
+    Folder["User-selected backup folder<br/>JSON + ICS"]
+    NativeAI -.-> LocalModels
+    WebAI -.->|Local Ollama only| LocalModels
+    WebAI -.->|Explicit hosted choice| HostedAI
+    NativeServices -.-> Google
+    NativeServices -.-> Folder
+    WebServices -.-> Google
+    WebServices -.-> Folder
+```
+
+Solid arrows show application calls and storage access; dashed arrows show optional provider or backup connections. WebLLM and browser speech run on device after explicit model loading; browser audio is not sent to a provider. Scheduling is on demand and deterministic, while AI proposes task drafts for review. Google publishing does not import remote edits, and live account verification remains outstanding. Backup timers run only while the app or browser tab is open; they do not merge workspaces.
+
 - `components/learner-workspace.tsx`: application shell and views.
 - `components/workspace-forms.tsx`, `components/ui/`: typed forms and owned shadcn/ui component source.
 - `lib/domain.ts`: shared frontend records and validation.
