@@ -15,7 +15,7 @@ export interface PlanOptions {
 export interface Proposal {
   id: string;
   events: EventInput[];
-  unscheduled: { title: string; minutes: number; reason: string }[];
+  unscheduled: { taskId: string; title: string; minutes: number; reason: string }[];
   fingerprint: string;
 }
 export const workspaceFingerprint = (w: Workspace) => JSON.stringify(w);

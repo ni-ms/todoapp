@@ -1,5 +1,6 @@
 "use client";
 import type { Draft as CaptureDraft } from "@/lib/ai-contract";
+import { prepareDraftReview } from "@/lib/capture-review";
 import { SchedulingFields } from "@/components/scheduling-fields";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -31,7 +32,7 @@ interface ContextItem {
   truncated: boolean;
   selected: boolean;
 }
-interface Draft extends CaptureDraft { selected: boolean; editedFields: string[]; }
+interface Draft extends CaptureDraft { suggestedDependencies: string[]; selected: boolean; editedFields: string[]; }
 export function TaskCapture({
   tags,
   events = [],
@@ -217,7 +218,7 @@ export function TaskCapture({
       );
       if (mounted.current)
         setDrafts(
-          result.map((d) => ({
+          prepareDraftReview(result).map((d) => ({
             ...d,
             tagIds: [
               ...new Set([
@@ -371,8 +372,8 @@ export function TaskCapture({
             ? "Recording… Stops after 90 seconds. Audio goes only to your selected local speech model."
             : "Recording… Stops after 90 seconds. Audio stays on this device and is transcribed in your browser."
           : isDesktop()
-            ? "Review AI setup to choose where requests are processed. Recording uses your selected local speech model. Review drafts before adding them."
-            : "Voice is transcribed on this device. Load the speech model in AI setup first. Review the transcript before creating task drafts."}
+            ? "Voice stays on this device."
+            : "For voice, load a speech model in AI setup."}
       </p>
       {events.some((e)=>!e.deletedAt) && <details className="mt-4 rounded-lg border p-3 text-xs">
         <summary className="cursor-pointer font-medium">Choose calendar context ({calendarIds.length} selected)</summary>
@@ -450,7 +451,7 @@ export function TaskCapture({
       {drafts.length > 0 && (
         <div className="mt-5 space-y-4 border-t pt-5">
           <h3 className="text-sm font-semibold">What the app understood</h3>
-          <p className="text-xs text-muted-foreground">Review each task before adding it. Estimates are labeled; unresolved instructions stay visible and pause scheduling.</p>
+          <p className="text-xs text-muted-foreground">Review drafts before adding. Resolve questions to enable scheduling.</p>
           {drafts.map((d, index) => (
             <fieldset
               key={index}
@@ -521,6 +522,13 @@ export function TaskCapture({
                 onChange={(e) => change(index, { description: e.target.value })}
               />
               {d.scheduling.unresolved.length > 0 && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Needs clarification: {d.scheduling.unresolved.join(" ")}</p>}
+              {d.suggestedDependencies.length > 0 && <fieldset className="space-y-2 rounded-lg border p-3 text-xs">
+                <legend className="px-1 font-medium">Suggested task order · optional</legend>
+                {d.suggestedDependencies.map((id) => <label key={id} className="flex items-center gap-2">
+                  <input type="checkbox" checked={d.scheduling.dependencies.includes(id)} onChange={(e) => change(index, { scheduling: { ...d.scheduling, dependencies: e.target.checked ? [...d.scheduling.dependencies, id] : d.scheduling.dependencies.filter((dep) => dep !== id) } })} />
+                  Finish “{drafts[Number(id.slice(6))]?.title ?? "Unavailable task"}” first
+                </label>)}
+              </fieldset>}
               <SchedulingFields value={d.scheduling} onChange={(scheduling)=>change(index,{scheduling})} dependencies={drafts.flatMap((item,i)=>i!==index?[{id:`draft:${i}`,title:item.title}]:[])}/>
               <TagPicker
                 tags={tags}

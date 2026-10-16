@@ -69,8 +69,7 @@ function NativeGoogleConnection({
         Google
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        Publish events and deadlines to a dedicated Google Calendar. Back up
-        your workspace to Google Drive.
+        Publish to Google Calendar and back up to Drive.
       </p>
       {!isDesktop() ? (
         <p className="mt-4 text-xs text-muted-foreground">
@@ -87,7 +86,7 @@ function NativeGoogleConnection({
                   onClick={() => run("sync")}
                 >
                   <RefreshCw />
-                  {busy && action === "sync" ? "Syncing…" : "Sync now"}
+                  {busy && action === "sync" ? "Publishing…" : "Publish and back up now"}
                 </Button>
                 <Button
                   variant="ghost"
@@ -156,12 +155,12 @@ function NativeGoogleConnection({
                 checked={status.automatic}
                 onChange={(e) => run(e.target.checked ? "resume" : "pause")}
               />
-              Sync automatically while Daymark is open
+              Publish and back up while Daymark is open
             </label>
           )}
           {status?.lastSync && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Last synced: {new Date(status.lastSync).toLocaleString()}
+              Last published: {new Date(status.lastSync).toLocaleString()}
             </p>
           )}
           {status?.error && (
@@ -172,9 +171,7 @@ function NativeGoogleConnection({
         </>
       )}
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-        Publishing is one way: Daymark → Google. Changes made in Google are not
-        imported. If a published event was edited there, Daymark leaves it
-        unchanged and reports a conflict.
+        One-way publishing. Google edits aren’t imported; conflicting edits are left unchanged.
       </p>
     </section>
   );

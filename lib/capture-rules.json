@@ -41,5 +41,6 @@
   "deadlineCue": "\\b(?:by|due|deadline|before)\\b",
   "preferenceCue": "\\b(?:prefer|ideally|usually|best|rather)\\b|if possible",
   "durationUnit": "\\b(?:hours?|hrs?|minutes?|mins?)\\b",
-  "compoundNumberPrefix": "(?:\\b(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)(?: and)?[ -])$"
+  "compoundNumberPrefix": "(?:\\b(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)(?: and)?[ -])$",
+  "dependencyCue": "\\b(?:before|after|then|depends?\\s+on|prerequisites?|first|until)\\b"
 }

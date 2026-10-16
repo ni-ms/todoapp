@@ -1461,5 +1461,781 @@
       }
     ],
     "unscheduled": []
+  },
+  {
+    "name": "independent tasks never block each other",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "c",
+          "title": "Go for a walk",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T09:30:00-07:00"
+      },
+      {
+        "taskId": "b",
+        "start": "2026-10-15T09:30:00-07:00",
+        "end": "2026-10-15T10:00:00-07:00"
+      },
+      {
+        "taskId": "c",
+        "start": "2026-10-15T10:00:00-07:00",
+        "end": "2026-10-15T10:30:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "explicit prerequisites finish before dependent sessions",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "a",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T09:30:00-07:00"
+      },
+      {
+        "taskId": "b",
+        "start": "2026-10-15T09:30:00-07:00",
+        "end": "2026-10-15T10:00:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "completed prerequisite does not block work",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "done",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [
+      {
+        "taskId": "b",
+        "start": "2026-10-15T09:00:00-07:00",
+        "end": "2026-10-15T09:30:00-07:00"
+      }
+    ],
+    "unscheduled": []
+  },
+  {
+    "name": "self prerequisite warning names affected task",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "taskId": "a",
+        "title": "Read chapters",
+        "minutes": 30,
+        "reason": "“Read chapters” lists itself as a prerequisite. Remove it in Scheduling details."
+      }
+    ]
+  },
+  {
+    "name": "trashed prerequisite warning retains its title",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": "trashed",
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "taskId": "b",
+        "title": "Practice exercises",
+        "minutes": 30,
+        "reason": "“Read chapters” is in Trash. Restore it or remove it as a prerequisite."
+      }
+    ]
+  },
+  {
+    "name": "missing prerequisite warning identifies the missing reference",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "missing-id"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "taskId": "b",
+        "title": "Practice exercises",
+        "minutes": 30,
+        "reason": "Prerequisite task (missing-id) no longer exists. Remove it in Scheduling details."
+      }
+    ]
+  },
+  {
+    "name": "cycle warning names tasks and explains downstream blocking",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "b"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "c",
+          "title": "Go for a walk",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "taskId": "b",
+        "title": "Practice exercises",
+        "minutes": 30,
+        "reason": "Prerequisite loop involving “Practice exercises” and “Read chapters”. Remove a dependency to break the loop."
+      },
+      {
+        "taskId": "a",
+        "title": "Read chapters",
+        "minutes": 30,
+        "reason": "Waiting for “Practice exercises”, which could not be fully scheduled. Check its planning warning."
+      },
+      {
+        "taskId": "c",
+        "title": "Go for a walk",
+        "minutes": 30,
+        "reason": "Waiting for “Read chapters”, which could not be fully scheduled. Check its planning warning."
+      }
+    ]
+  },
+  {
+    "name": "unschedulable prerequisite names blocker without claiming cycle",
+    "workspace": {
+      "areas": [],
+      "courses": [],
+      "tags": [],
+      "tasks": [
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "a",
+          "title": "Read chapters",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": "2026-10-14",
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        },
+        {
+          "createdAt": "old",
+          "updatedAt": "old",
+          "deletedAt": null,
+          "id": "b",
+          "title": "Practice exercises",
+          "description": "",
+          "courseId": null,
+          "kind": "study",
+          "status": "todo",
+          "priority": "medium",
+          "dueDate": null,
+          "estimateMinutes": 30,
+          "tagIds": [],
+          "scheduling": {
+            "timeZone": "America/Los_Angeles",
+            "deadlineAt": null,
+            "earliestStart": null,
+            "fixedStart": null,
+            "fixedEnd": null,
+            "remainingMinutes": null,
+            "dependencies": [
+              "a"
+            ],
+            "splittable": true,
+            "minimumSessionMinutes": 5,
+            "preferredSessionMinutes": 90,
+            "allowedWindows": [],
+            "preferredWindows": [],
+            "unresolved": [],
+            "workDate": null
+          }
+        }
+      ],
+      "events": []
+    },
+    "options": {
+      "startDate": "2026-10-15",
+      "timeZone": "America/Los_Angeles",
+      "startHour": 9,
+      "endHour": 21,
+      "weekends": true,
+      "breakMinutes": 0
+    },
+    "now": "2026-10-15T08:00:00-07:00",
+    "blocks": [],
+    "unscheduled": [
+      {
+        "taskId": "a",
+        "title": "Read chapters",
+        "minutes": 30,
+        "reason": "Deadline has passed."
+      },
+      {
+        "taskId": "b",
+        "title": "Practice exercises",
+        "minutes": 30,
+        "reason": "Waiting for “Read chapters”, which could not be fully scheduled. Check its planning warning."
+      }
+    ]
   }
 ]

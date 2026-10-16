@@ -12,9 +12,9 @@ interface SetupStatus {
   whisper: boolean;
 }
 const options = [
-  { id: "ollama", title: "Task drafts · Ollama + Qwen 3 4B", description: "About 2.5 GB for the task model, plus the runtime. Other installed models remain available." },
-  { id: "phonon-2", title: "Voice · Phonon 2", description: "English · about 164 MB of model weights, plus Python and speech dependencies." },
-  { id: "whisper", title: "Voice · Whisper base.en", description: "English · about 148 MB of model weights, plus the speech runtime." },
+  { id: "ollama", title: "Task drafts · Ollama + Qwen 3 4B", description: "About 2.5 GB + runtime." },
+  { id: "phonon-2", title: "Voice · Phonon 2", description: "English · about 164 MB + runtime." },
+  { id: "whisper", title: "Voice · Whisper base.en", description: "English · about 148 MB + runtime." },
 ] as const;
 export function LocalAIInstaller({ onBusyChange, refresh, taskModelInstalled }: { onBusyChange: (busy: boolean) => void; refresh: () => void; taskModelInstalled: boolean }) {
   const [status, setStatus] = useState<SetupStatus | null>(null);
@@ -50,15 +50,15 @@ export function LocalAIInstaller({ onBusyChange, refresh, taskModelInstalled }: 
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold">Download local AI</h3>
-        <p className="max-w-xl text-xs text-muted-foreground">Install once, then use your models offline. Downloads need internet and several GB of free space. Your selected model stays the same.</p>
+        <p className="max-w-xl text-xs text-muted-foreground">Install once to use offline. Allow several GB of free space.</p>
       </div>
       <Button size="sm" disabled={busy || !status?.supported} onClick={() => void install("all")}>
         {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
-        Install all local options
+        Install all
       </Button>
     </div>
-    {status && !status.supported && <p className="text-xs text-muted-foreground">Automatic desktop installation currently supports macOS. The browser version offers on-device model downloads.</p>}
-    {status?.supported && <p className="text-xs text-muted-foreground">{status.packageManager ? "Homebrew is ready. Daymark installs missing runtimes and downloads their models for you." : <>This installer needs <a className="underline" href="https://brew.sh" target="_blank" rel="noreferrer">Homebrew</a> once to manage runtimes. Install it, then retry here.</>}</p>}
+    {status && !status.supported && <p className="text-xs text-muted-foreground">Automatic installation is available on macOS.</p>}
+    {status?.supported && !status.packageManager && <p className="text-xs text-muted-foreground">{<>This installer needs <a className="underline" href="https://brew.sh" target="_blank" rel="noreferrer">Homebrew</a> once to manage runtimes. Install it, then retry here.</>}</p>}
     <div className="divide-y rounded-lg border bg-background">
       {options.map(option => {
         const installed = option.id === "ollama" ? status?.ollama : option.id === "phonon-2" ? status?.phonon : status?.whisper;
@@ -78,6 +78,6 @@ export function LocalAIInstaller({ onBusyChange, refresh, taskModelInstalled }: 
       <p className="text-xs text-muted-foreground">You can leave Settings while this runs. Keep Daymark open.</p>
     </div>}
     {(error || status?.progress.error) && <p role="alert" className="text-xs text-destructive">{error || status?.progress.error}</p>}
-    <p className="text-xs text-muted-foreground">Runtime packages are managed by Homebrew. Phonon’s Python environment and speech downloads are stored by Daymark. Canceling keeps completed installations; retry to finish. Phonon 2 weights: <a className="underline" href="https://huggingface.co/FermionResearch/Phonon-2" target="_blank" rel="noreferrer">Fermion Research · CC BY 4.0</a>.</p>
+    <p className="text-xs text-muted-foreground">Phonon 2 weights: <a className="underline" href="https://huggingface.co/FermionResearch/Phonon-2" target="_blank" rel="noreferrer">Fermion Research · CC BY 4.0</a>.</p>
   </div>;
 }

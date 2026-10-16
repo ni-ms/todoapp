@@ -20,6 +20,7 @@ pub struct Options {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Unscheduled {
+    pub task_id: String,
     pub title: String,
     pub minutes: i64,
     pub reason: String,

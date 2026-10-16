@@ -31,12 +31,10 @@ export function BrowserSpeechSettings() {
   return (
     <div className="space-y-3 border-t pt-4">
       <h3 className="text-sm font-semibold">
-        Voice transcription · on this device
+        Voice transcription
       </h3>
       <p className="text-xs text-muted-foreground">
-        Transcribe directly in your browser for every text-AI choice. No local
-        server or API key is needed. Audio stays on this device; only the transcript is sent if you
-        later choose hosted task drafts.
+        Audio stays on this device. Transcripts are shared only when you create hosted AI drafts.
       </p>
       <label className="block space-y-2 text-xs">
         <span>Speech model</span>
@@ -54,14 +52,13 @@ export function BrowserSpeechSettings() {
       </label>
       <p className="text-xs text-muted-foreground">
         {model === "phonon-2"
-          ? "Phonon 2 uses a community ONNX conversion by Tiyuvta. English only. Allow about 690 MB for downloads and several GB of free memory; processing can be slow on smaller devices."
-          : "Whisper Tiny detects the spoken language. About 41 MB of model weights; accuracy varies by language and recording quality."}
-        {" "}Loading downloads and caches model files plus the browser runtime.
-        Switching models unloads the previous model. Models never switch automatically.
+          ? "English only · about 690 MB download. Needs several GB of free memory."
+          : "Multilingual · about 41 MB of model weights."}
+        {" "}Loading downloads and caches the model and runtime.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" disabled={busy || ready || settingBusy} onClick={load}>
-          {ready ? "Speech model loaded" : "Download / load speech model"}
+          {ready ? "Speech model loaded" : "Load speech model"}
         </Button>
         {busy && (
           <Button variant="ghost" onClick={() => stopSpeechModel()}>
@@ -81,10 +78,7 @@ export function BrowserSpeechSettings() {
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Requires WebAssembly and microphone permission on HTTPS or localhost.
-        Accuracy varies with background noise and device speed. Load again after reloading the page.
-        Recordings stop after 90 seconds. Leaving capture cancels an unfinished
-        transcription.
+        Load again after reloading the page. Recordings stop after 90 seconds.
       </p>
       {progress && (
         <p role="status" className="text-xs text-muted-foreground">

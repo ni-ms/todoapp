@@ -19,12 +19,15 @@ import {
 import { duration, localDate, type Workspace } from "@/lib/domain";
 export function Planner({
   onApply,
+  onEditTask,
   requestOpen = 0,
 }: {
   onApply: (w: Workspace, notice: string) => void;
+  onEditTask: (id: string, returnFocus: HTMLElement | null) => void;
   requestOpen?: number;
 }) {
   const trigger = useRef<HTMLElement | null>(null);
+  const pendingEdit = useRef<string | null>(null);
   const [open, setOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -129,7 +132,10 @@ export function Planner({
           showCloseButton={!busy}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            trigger.current?.focus();
+            const taskId = pendingEdit.current;
+            pendingEdit.current = null;
+            if (taskId) onEditTask(taskId, trigger.current);
+            else trigger.current?.focus();
           }}
         >
           <DialogHeader>
@@ -256,9 +262,14 @@ export function Planner({
                     Work that doesn’t fit
                   </h3>
                   {proposal.unscheduled.map((t, i) => (
-                    <p key={i} className="mb-2 text-xs">
-                      {t.title}: {duration(t.minutes)} unscheduled. {t.reason}
-                    </p>
+                    <div key={i} className="mb-3 text-xs last:mb-0">
+                      <p className="font-medium">{t.title} · {duration(t.minutes)} unscheduled</p>
+                      <p className="mt-1">{t.reason}</p>
+                      <Button type="button" variant="link" size="sm" className="h-auto px-0 py-1 text-xs"
+                        onClick={() => { pendingEdit.current = t.taskId; setOpen(false); setProposal(null); }}>
+                        Edit task
+                      </Button>
+                    </div>
                   ))}
                 </div>
               )}

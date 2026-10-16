@@ -48,8 +48,7 @@ function NativeAISettings() {
     <section className="surface space-y-4 p-6">
       <h2 className="text-sm font-semibold">Local AI</h2>
       <p className="text-sm text-muted-foreground">
-        Use Ollama for task drafts and Phonon 2 or Whisper for voice transcription. No API
-        key is needed.
+        Task drafts and voice transcription stay on this device.
       </p>
       <LocalAIInstaller onBusyChange={setInstalling} refresh={refresh} taskModelInstalled={Boolean(status?.models.includes("qwen3:4b"))} />
       {isDesktop() ? (
@@ -84,8 +83,7 @@ function NativeAISettings() {
             </select>
           </label>
           <p className="text-xs text-muted-foreground">
-            Audio stays on this device. Models never switch automatically.
-            Download the speech option above, then start local AI after selecting it. Existing services keep running until stopped.
+            Download a speech model above, select it, then start local AI.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -126,8 +124,7 @@ function NativeAISettings() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Services started here stop when you quit Daymark. Existing services
-            are left running.
+            App-started services stop when you quit Daymark.
           </p>
           <label className="block space-y-2 text-xs">
             <span>Task model</span>
@@ -177,8 +174,7 @@ function NativeAISettings() {
           </li>
         </ol>
         <p className="mt-3 text-muted-foreground">
-          The automatic desktop installer currently supports macOS and uses Homebrew for runtime packages. Audio is converted to WAV here; FFmpeg is
-          not needed. Cloud model aliases are rejected.
+          Automatic installation requires macOS and Homebrew.
         </p>
       </details>
       {error && (

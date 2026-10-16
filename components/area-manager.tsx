@@ -17,7 +17,7 @@ export function AreaManager({ areas, tags, tasks, busy, onOpen, onSave, onArchiv
   const [editing, setEditing] = useState<AreaInput | null>(null);
   return <>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <p className="text-sm text-muted-foreground">Create spaces using one or more tags. Tasks matching any selected tag appear here.</p>
+      <p className="text-sm text-muted-foreground">Group your tasks by tag.</p>
       <Button disabled={busy} onClick={() => setEditing({ name: "", color: "violet", icon: "hash", tagIds: [] })}><Plus />New area</Button>
     </div>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -36,7 +36,7 @@ export function AreaManager({ areas, tags, tasks, busy, onOpen, onSave, onArchiv
         </section>;
       })}
     </div>
-    {!areas.some((area) => !area.deletedAt) && <p className="surface p-8 text-center text-sm text-muted-foreground">Create an area, then choose the tags it brings together.</p>}
+    {!areas.some((area) => !area.deletedAt) && <p className="surface p-8 text-center text-sm text-muted-foreground">Create an area to group your tasks.</p>}
     <Dialog open={!!editing} onOpenChange={(open) => { if (!open && !busy) setEditing(null); }}>
       <DialogContent showCloseButton={!busy}>{editing && <AreaForm initial={editing} tags={tags} busy={busy} onCancel={() => setEditing(null)} onSave={async (input) => { await onSave(input); setEditing(null); }} />}</DialogContent>
     </Dialog>
@@ -52,7 +52,7 @@ function AreaForm({ initial, tags, busy, onSave, onCancel }: { initial: AreaInpu
     <DialogHeader><DialogTitle>{value.id ? "Edit area" : "New area"}</DialogTitle><DialogDescription>Give this space its own name and choose the tags it includes.</DialogDescription></DialogHeader>
     <fieldset disabled={busy} className="space-y-4">
       <div className="space-y-2"><Label htmlFor="area-name">Area name</Label><Input id="area-name" required maxLength={200} autoFocus value={value.name} onChange={(e) => setValue({ ...value, name: e.target.value })} placeholder="e.g. University, Developer journey" /></div>
-      <div className="space-y-2"><Label>Included tags</Label><TagPicker tags={tags} value={value.tagIds} onChange={(tagIds) => setValue({ ...value, tagIds })} /><p className="text-xs text-muted-foreground">Match any selected tag. Tags can belong to several areas.</p></div>
+      <div className="space-y-2"><Label>Included tags</Label><TagPicker tags={tags} value={value.tagIds} onChange={(tagIds) => setValue({ ...value, tagIds })} /><p className="text-xs text-muted-foreground">Includes tasks with any selected tag.</p></div>
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-2 text-sm">Icon<select className="field-select" aria-label="Area icon" value={value.icon} onChange={(e) => setValue({ ...value, icon: e.target.value })}>{!presetIcons.some((icon) => icon === value.icon) && <option value={value.icon}>Custom icon</option>}{presetIcons.map((icon) => <option key={icon} value={icon}>{icon}</option>)}</select></label>
         <label className="space-y-2 text-sm">Color<select className="field-select" aria-label="Area color" value={value.color} onChange={(e) => setValue({ ...value, color: e.target.value as AreaInput["color"] })}>{colors.map((color) => <option key={color} value={color}>{color}</option>)}</select></label>

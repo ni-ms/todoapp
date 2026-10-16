@@ -129,13 +129,50 @@ pub fn resolve(
             d.estimated_fields.push("estimateMinutes".into());
         }
     }
+    // Only the user's request can establish task ordering, never model guesses.
+    let ordering = pattern("deadlineDay").replace_all(request, "");
+    let ordering = pattern("afterClass").replace_all(&ordering, "");
+    let ordering = re(&format!(
+        r"\b(?:before|after|until)\s+{}",
+        rules["clock"].as_str().unwrap()
+    ))
+    .replace_all(&ordering, "")
+    .into_owned();
+    if !pattern("dependencyCue").is_match(&ordering) {
+        for draft in &mut drafts {
+            draft.scheduling.dependencies.clear();
+        }
+    }
     if drafts.len() == 2
-        && re(r"\bbefore\b").find_iter(request).count() == 1
+        && re(r"\bbefore\b").find_iter(&ordering).count() == 1
         && !pattern("deadlineDay").is_match(request)
         && !re(r"\b(?:after|unless|if)\b").is_match(request)
     {
         drafts[0].scheduling.dependencies.clear();
         drafts[1].scheduling.dependencies = vec!["draft:0".into()];
+    }
+    fn visit(index: usize, drafts: &[Draft], state: &mut [u8]) -> Result<()> {
+        if state[index] == 1 {
+            return Err("Task prerequisites form a loop. Review the task order.".into());
+        }
+        if state[index] == 2 {
+            return Ok(());
+        }
+        state[index] = 1;
+        for id in &drafts[index].scheduling.dependencies {
+            let next = id
+                .strip_prefix("draft:")
+                .and_then(|v| v.parse::<usize>().ok())
+                .filter(|&n| n < drafts.len())
+                .ok_or("Unknown draft dependency.")?;
+            visit(next, drafts, state)?;
+        }
+        state[index] = 2;
+        Ok(())
+    }
+    let mut state = vec![0; drafts.len()];
+    for index in 0..drafts.len() {
+        visit(index, &drafts, &mut state)?;
     }
     if drafts.len() != 1 {
         return Ok(drafts);
@@ -388,6 +425,28 @@ mod tests {
                 "{}",
                 c["name"]
             );
+        }
+    }
+    #[test]
+    fn explicit_order_rejects_self_links_and_cycles() {
+        let cases: Value =
+            serde_json::from_str(include_str!("../../tests/fixtures/capture-benchmark.json"))
+                .unwrap();
+        let mut tasks = cases[2]["tasks"].clone();
+        for (link, request) in [
+            ("draft:1", "Read after practicing exercises."),
+            ("draft:0", "Read first, then practice exercises."),
+        ] {
+            tasks[0]["scheduling"]["dependencies"] = serde_json::json!([link]);
+            let drafts = crate::local_ai::validate_drafts(
+                &serde_json::json!({"tasks":tasks}).to_string(),
+                &[],
+            )
+            .unwrap();
+            let error = resolve(drafts, request, "2026-10-15", "America/Los_Angeles", &[])
+                .err()
+                .unwrap();
+            assert!(error.contains("loop"));
         }
     }
     #[test]

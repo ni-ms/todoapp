@@ -388,6 +388,13 @@ export default function LearnerWorkspace({
                       }
                     />
                     <Planner
+                      onEditTask={(id, returnFocus) => {
+                        const task = tasks.find((t) => t.id === id);
+                        if (task) {
+                          openEditor({ type: "task", task });
+                          if (returnFocus) trigger.current = returnFocus;
+                        }
+                      }}
                       requestOpen={capturePlanRequest}
                       onApply={(w, notice) => {
                         setData(w);
@@ -414,12 +421,6 @@ export default function LearnerWorkspace({
                                 ? `Tasks in ${activeArea.name}`
                                 : "Your tasks"}
                           </h2>
-                          {view === "today" && (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Due today, overdue, in progress, or scheduled
-                              today.
-                            </p>
-                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {view === "tasks" && (

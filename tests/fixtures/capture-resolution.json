@@ -4721,5 +4721,553 @@
         }
       }
     ]
+  },
+  {
+    "name": "independent tasks discard invented self-links and chains",
+    "request": "Finish fse assignment for 1 hour, read a few chapters from pm book for 30 minutes, and have some time for a walk for 30 minutes.",
+    "today": "2026-10-15",
+    "timeZone": "America/Los_Angeles",
+    "calendarContext": [],
+    "raw": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Have some time for a walk",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Have some time for a walk",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "date-only deadline does not create task prerequisites",
+    "request": "Read for 30 minutes and exercise for 30 minutes before Friday.",
+    "today": "2026-10-15",
+    "timeZone": "America/Los_Angeles",
+    "calendarContext": [],
+    "raw": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "class reference does not create task prerequisites",
+    "request": "Read for 30 minutes and exercise for 30 minutes after class.",
+    "today": "2026-10-15",
+    "timeZone": "America/Los_Angeles",
+    "calendarContext": [],
+    "raw": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "clock time does not create task prerequisites",
+    "request": "Read for 30 minutes and exercise for 30 minutes before 5 pm.",
+    "today": "2026-10-15",
+    "timeZone": "America/Los_Angeles",
+    "calendarContext": [],
+    "raw": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [
+            "draft:0"
+          ],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "title": "Finish fse assignment",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 60,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      },
+      {
+        "title": "Read a few chapters from pm book",
+        "description": "",
+        "priority": "medium",
+        "dueDate": null,
+        "estimateMinutes": 30,
+        "tagIds": [],
+        "scheduling": {
+          "timeZone": "America/Los_Angeles",
+          "deadlineAt": null,
+          "earliestStart": null,
+          "fixedStart": null,
+          "fixedEnd": null,
+          "remainingMinutes": null,
+          "dependencies": [],
+          "splittable": true,
+          "minimumSessionMinutes": 5,
+          "preferredSessionMinutes": 90,
+          "allowedWindows": [],
+          "preferredWindows": [],
+          "unresolved": [],
+          "workDate": null
+        },
+        "estimatedFields": [
+          "priority"
+        ]
+      }
+    ]
   }
 ]

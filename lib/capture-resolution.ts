@@ -43,11 +43,29 @@ export function resolveCapture(drafts: Draft[], request: string, context: Captur
             estimated.add("estimateMinutes");
         d.estimatedFields = [...estimated];
     }
+    // Model output is a proposal, not evidence that the user asked for prerequisites.
+    // Dates and class references alone do not express task-to-task ordering.
+    const ordering = request.replace(new RegExp(rules.deadlineDay, "gi"), "")
+        .replace(new RegExp(rules.afterClass, "gi"), "")
+        .replace(new RegExp(`\\b(?:before|after|until)\\s+${rules.clock}`, "gi"), "");
+    if (!regex(rules.dependencyCue).test(ordering))
+        for (const d of result) d.scheduling.dependencies = [];
     // Global phrases cannot safely be assigned to individual tasks in a batch.
-    if (result.length === 2 && matches(request, "\\bbefore\\b").length === 1 && !regex(rules.deadlineDay).test(request) && !/\b(?:after|unless|if)\b/i.test(request)) {
+    if (result.length === 2 && matches(ordering, "\\bbefore\\b").length === 1 && !regex(rules.deadlineDay).test(request) && !/\b(?:after|unless|if)\b/i.test(request)) {
         result[0].scheduling.dependencies = [];
         result[1].scheduling.dependencies = ["draft:0"];
     }
+    // Reject remaining self-links and cycles after explicit phrase repair, before saving.
+    const visiting = new Set<number>(), visited = new Set<number>();
+    const visit = (index: number) => {
+        if (visiting.has(index)) throw new Error("Task prerequisites form a loop. Review the task order.");
+        if (visited.has(index)) return;
+        visiting.add(index);
+        for (const id of result[index].scheduling.dependencies) visit(Number(id.slice(6)));
+        visiting.delete(index);
+        visited.add(index);
+    };
+    result.forEach((_, index) => visit(index));
     if (result.length !== 1)
         return result;
     const d = result[0], s = d.scheduling;

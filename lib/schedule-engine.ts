@@ -46,6 +46,7 @@ function windows(gaps: Interval[], list: StudyWindow[], zone: string): Interval[
 }
 export function scheduleTasks(w: Workspace, gaps: Interval[], zone: string, now: number, breakMinutes: number) {
     const events: EventInput[] = [], unscheduled: {
+        taskId: string;
         title: string;
         minutes: number;
         reason: string;
@@ -92,13 +93,24 @@ export function scheduleTasks(w: Workspace, gaps: Interval[], zone: string, now:
         let earliest = Math.max(now, workBounds(t)[0], s.earliestStart ? Date.parse(s.earliestStart) : now), reason = "";
         if (s.unresolved.length)
             reason = "Resolve the questions in this task's scheduling details before planning.";
+        const blockers: string[] = [];
         for (const dep of s.dependencies) {
-            const prerequisite = w.tasks.find((p) => p.id === dep && !p.deletedAt);
-            if (!prerequisite || (prerequisite.status !== "done" && !visit(prerequisite)))
-                reason = "A prerequisite is missing, unfinished, or part of a dependency cycle.";
+            const prerequisite = w.tasks.find((p) => p.id === dep);
+            if (!prerequisite)
+                blockers.push(`Prerequisite task (${dep}) no longer exists. Remove it in Scheduling details.`);
+            else if (prerequisite.deletedAt)
+                blockers.push(`“${prerequisite.title}” is in Trash. Restore it or remove it as a prerequisite.`);
+            else if (dep === t.id)
+                blockers.push(`“${t.title}” lists itself as a prerequisite. Remove it in Scheduling details.`);
+            else if (prerequisite.status === "done") continue;
+            else if (state.get(dep) === "visiting")
+                blockers.push(`Prerequisite loop involving “${t.title}” and “${prerequisite.title}”. Remove a dependency to break the loop.`);
+            else if (!visit(prerequisite))
+                blockers.push(`Waiting for “${prerequisite.title}”, which could not be fully scheduled. Check its planning warning.`);
             else
                 earliest = Math.max(earliest, completion.get(dep) ?? now);
         }
+        reason = [reason, ...blockers].filter(Boolean).join(" ");
         const limit = deadline(t), effort = s.remainingMinutes ?? t.estimateMinutes;
         const existing = w.events.filter((e) => !e.deletedAt && !e.allDay && e.taskId === t.id).map((e) => [Date.parse(e.start), Date.parse(e.end)] as Interval).filter(([a, b]) => a >= earliest && b <= limit && (!s.fixedStart || (a === Date.parse(s.fixedStart) && b === Date.parse(s.fixedEnd!))) && windows([[a, b]], s.allowedWindows, s.timeZone).some(([x, y]) => x <= a && y >= b));
         // Union reservations; overlapping manual sessions must not double-count effort.
@@ -140,7 +152,7 @@ export function scheduleTasks(w: Workspace, gaps: Interval[], zone: string, now:
             }
         }
         if (reason || remaining > 0)
-            unscheduled.push({ title: t.title, minutes: remaining, reason: reason || (limit <= now ? "Deadline has passed." : "Not enough free time within the deadline, start, and session limits. Try more availability or smaller sessions.") });
+            unscheduled.push({ taskId: t.id, title: t.title, minutes: remaining, reason: reason || (limit <= now ? "Deadline has passed." : "Not enough free time within the deadline, start, and session limits. Try more availability or smaller sessions.") });
         else
             completion.set(t.id, finish);
         state.set(t.id, "done");

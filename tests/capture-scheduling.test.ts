@@ -19,7 +19,13 @@ for (const c of parity)
         const w = structuredClone(c.workspace) as Workspace;
         const p = plan(w, c.options, Date.parse(c.now), "fixture");
         assert.deepEqual(p.events.map((e) => ({ taskId: e.taskId, start: Date.parse(e.start), end: Date.parse(e.end) })), c.blocks.map((e) => ({ taskId: e.taskId, start: Date.parse(e.start), end: Date.parse(e.end) })));
-        assert.deepEqual(p.unscheduled.map(({ title, minutes }) => ({ title, minutes })), c.unscheduled);
+        assert.deepEqual(p.unscheduled.map(({ title, minutes }) => ({ title, minutes })), c.unscheduled.map(({ title, minutes }) => ({ title, minutes })));
+        for (const warning of c.unscheduled) {
+            if ("reason" in warning) {
+                const actual = p.unscheduled.find((item) => item.taskId === warning.taskId);
+                assert.equal(actual?.reason, warning.reason);
+            }
+        }
         // Review/apply/undo remains atomic with all new task metadata present.
         if (p.events.length) {
             const added = applyProposal(w, p, c.now);
@@ -93,7 +99,7 @@ test("explicit resolution preserves unsupported questions and avoids applying gl
  const batch=capture.find((c)=>c.name==="prerequisites")!.tasks;
  const unchanged=interpretDrafts(JSON.stringify({tasks:batch}),[],"Read for 30 minutes and attempt exercises for 45 minutes; prefer evenings for the exercises only.",c);
  assert.deepEqual(unchanged[0].scheduling.preferredWindows,[]);
- assert.deepEqual(unchanged[1].scheduling.dependencies,batch[1].scheduling.dependencies);
+ assert.deepEqual(unchanged[1].scheduling.dependencies,[]);
 });
 test("explicit resolution respects negative splitting and edits only obsolete duration text",async()=>{
  const {interpretDrafts}=await import("../lib/ai-contract");
@@ -111,4 +117,49 @@ test("range effort is explicit and unsupported compound numbers are not partiall
  assert.equal(range.scheduling.splittable,false);
  const compound=interpretDrafts(JSON.stringify({tasks:[{...raw,estimateMinutes:45}]}),[],"Study for forty-five minutes.",c)[0];
  assert.equal(compound.estimateMinutes,45);assert.deepEqual(compound.estimatedFields,["priority"]);
+});
+
+test("AI task order stays optional until selected in review, then survives batch persistence", async () => {
+    const { prepareDraftReview } = await import("../lib/capture-review");
+    const { interpretDrafts } = await import("../lib/ai-contract");
+    const c = capture.find((c) => c.name === "prerequisites")!;
+    const interpreted = interpretDrafts(JSON.stringify({ tasks: c.tasks }), [], c.request, c);
+    const reviewed = prepareDraftReview(interpreted);
+    assert.deepEqual(reviewed[1].suggestedDependencies, ["draft:0"]);
+    assert.ok(reviewed.every((d) => d.scheduling.dependencies.length === 0));
+    assert.deepEqual(interpreted[1].scheduling.dependencies, ["draft:0"]);
+    const inputs = reviewed.map((d) => ({ ...d, courseId: null, kind: "study" as const, status: "todo" as const }));
+    const independent = await storage().saveTasks(inputs);
+    assert.ok(independent.tasks.slice(-2).every((t) => t.scheduling?.dependencies.length === 0));
+    reviewed[1].scheduling.dependencies = ["draft:0"];
+    const selected = await storage().saveTasks(reviewed.map((d) => ({ ...d, courseId: null, kind: "study" as const, status: "todo" as const })));
+    const [read, exercise] = selected.tasks.slice(-2);
+    assert.deepEqual(exercise.scheduling?.dependencies, [read.id]);
+});
+
+test("explicit AI order rejects self-links and cycles instead of saving blocked tasks", async () => {
+    const { interpretDrafts } = await import("../lib/ai-contract");
+    const c = capture.find((c) => c.name === "prerequisites")!;
+    const raw = structuredClone(c.tasks);
+    raw[0].scheduling.dependencies = ["draft:1"];
+    assert.throws(() => interpretDrafts(JSON.stringify({ tasks: raw }), [], "Read after practicing exercises.", c), /loop/);
+    raw[0].scheduling.dependencies = ["draft:0"];
+    assert.throws(() => interpretDrafts(JSON.stringify({ tasks: raw }), [], "Read first, then practice exercises.", c), /loop/);
+});
+
+test("repairing existing unintended prerequisites preserves task details and unblocks planning", async () => {
+    const c = capture[0];
+    const input = { ...validateDrafts(JSON.stringify({ tasks: c.tasks }), [])[0], title: "Finish fse assignment", dueDate: null, courseId: null, kind: "study" as const, status: "todo" as const, scheduling: { ...defaultScheduling(c.timeZone), dependencies: ["draft:0"] } };
+    const saved = await storage().saveTasks([input]);
+    const task = saved.tasks.at(-1)!;
+    const w: Workspace = { ...saved, tasks: [task], events: [] };
+    const options = { startDate: c.today, timeZone: c.timeZone, startHour: 9, endHour: 17, weekends: true, breakMinutes: 0 };
+    assert.match(plan(w, options, Date.parse(c.now), "blocked").unscheduled[0].reason, /lists itself/);
+    const repaired = await storage().saveTask({ ...taskInput(task), scheduling: { ...task.scheduling!, dependencies: [] } });
+    const actual = repaired.tasks.find((t) => t.id === task.id)!;
+    assert.deepEqual(actual, { ...task, updatedAt: actual.updatedAt, scheduling: { ...task.scheduling!, dependencies: [] } });
+    assert.deepEqual(repaired.events, saved.events);
+    const result = plan({ ...w, tasks: [actual] }, options, Date.parse(c.now), "repaired");
+    assert.deepEqual(result.unscheduled, []);
+    assert.ok(result.events.some((event) => event.taskId === task.id));
 });

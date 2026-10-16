@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Temporal } from "temporal-polyfill";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,7 @@ export function SchedulingFields({ value, onChange, dependencies = [] }: {
 }) {
     const s = value ?? defaultScheduling();
     const [error, setError] = useState("");
+    const summary = useRef<HTMLElement>(null);
     const patch = (p: Partial<TaskScheduling>) => onChange({ ...s, ...p });
     const local = (instant: string | null) => instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(s.timeZone).toPlainDateTime().toString({ smallestUnit: "minute" }) : "";
     function timed(key: "deadlineAt" | "earliestStart" | "fixedStart" | "fixedEnd", text: string) {
@@ -39,11 +40,19 @@ export function SchedulingFields({ value, onChange, dependencies = [] }: {
         })}
     <Button type="button" size="sm" variant="outline" disabled={s[key].length >= 14} onClick={() => patch({ [key]: [...s[key], { days: [1, 2, 3, 4, 5], start: "18:00", end: "21:00" }] })}>Add window</Button>
   </fieldset>;
-    return <details className="rounded-lg border p-3">
-    <summary className="cursor-pointer text-sm font-medium">Scheduling details{s.unresolved.length ? ` · ${s.unresolved.length} needs clarification` : ""}</summary>
+    return <div className="space-y-3">
+    {s.dependencies.length > 0 && <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-medium">Finish these tasks first</p>
+        <Button type="button" size="sm" variant="ghost" onClick={() => { patch({ dependencies: [] }); summary.current?.focus(); }}>Remove prerequisites</Button>
+      </div>
+      <ul className="mt-2 list-inside list-disc space-y-1">{s.dependencies.map((id) => <li key={id}>{dependencies.find((d) => d.id === id)?.title ?? `Unavailable task (${id})`}</li>)}</ul>
+    </div>}
+    <details className="rounded-lg border p-3">
+    <summary ref={summary} className="cursor-pointer text-sm font-medium">Scheduling details{s.unresolved.length ? ` · ${s.unresolved.length} needs clarification` : ""}</summary>
     <div className="mt-3 space-y-4">
       <label className="block space-y-1 text-xs">Time zone<select className="field-select mt-1 w-full" value={s.timeZone} onChange={(e) => patch({ timeZone: e.target.value })}>{[...new Set([s.timeZone, "UTC", ...Intl.supportedValuesOf("timeZone")])].sort().map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select></label>
-      <p className="text-xs text-muted-foreground">Times below use {s.timeZone}. Changing the zone keeps exact instants and changes how daily windows are interpreted. A date-only deadline stays date-only unless you set an exact time.</p>
+      <p className="text-xs text-muted-foreground">Times use {s.timeZone}. Changing zones keeps exact times fixed and shifts daily study windows.</p>
       <label className="block space-y-1 text-xs">Work date (optional, separate from deadline)<Input type="date" value={s.workDate ?? ""} onChange={(e) => patch({ workDate: e.target.value || null })}/></label>
       <div className="grid gap-3 sm:grid-cols-2">{([["deadlineAt", "Exact deadline (optional)"], ["earliestStart", "Earliest start"], ["fixedStart", "Fixed block start"], ["fixedEnd", "Fixed block end"]] as const).map(([key, title]) => <label key={key} className="space-y-1 text-xs">{title}<Input type="datetime-local" value={local(s[key])} onChange={(e) => timed(key, e.target.value)}/></label>)}</div>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -63,8 +72,9 @@ export function SchedulingFields({ value, onChange, dependencies = [] }: {
         </div>)}
         <Button type="button" variant="outline" size="sm" disabled={s.unresolved.length >= 20} onClick={() => patch({ unresolved: [...s.unresolved, ""] })}>Add question</Button>
       </fieldset>
-      <p className="text-xs text-muted-foreground">Tasks with questions are saved but held out of planning. Edit the details, then remove each resolved question. Repeating tasks and automatic recurring rules are not supported.</p>
+      <p className="text-xs text-muted-foreground">Tasks with questions won’t be scheduled. Update the details, then remove resolved questions.</p>
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
-  </details>;
+  </details>
+  </div>;
 }

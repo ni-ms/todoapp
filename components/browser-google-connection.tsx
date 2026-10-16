@@ -63,9 +63,7 @@ export function BrowserGoogleConnection({
     <section className="surface space-y-4 p-6">
       <h2 className="text-sm font-semibold">Google</h2>
       <p className="text-sm text-muted-foreground">
-        Publish events and open task deadlines to a dedicated Google Calendar.
-        Back up your entire workspace, including Trash, to Drive’s private
-        app-data folder.
+        Publish to Google Calendar and back up your workspace, including Trash, to Drive.
       </p>
       {!status?.connected && (
         <>
@@ -95,7 +93,7 @@ export function BrowserGoogleConnection({
                 })
               }
             >
-              Save setup / load sign-in
+              Save setup
             </Button>
             <Button
               disabled={busy || !ready || !status?.configured}
@@ -104,12 +102,14 @@ export function BrowserGoogleConnection({
               Sign in with Google
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Use a Web application OAuth client, enable Calendar/Drive APIs, and
-            register this website’s origin in Authorized JavaScript origins. No
-            client secret belongs in the website. A desktop OAuth JSON file does
-            not work here.
-          </p>
+          <details className="rounded-lg border p-3 text-xs">
+            <summary className="cursor-pointer font-medium">Google setup</summary>
+            <p className="mt-3 text-muted-foreground">
+              Create a Web application OAuth client, enable Calendar and Drive APIs,
+              and add this website’s origin to Authorized JavaScript origins.
+              Use the client ID only; never enter a client secret.
+            </p>
+          </details>
         </>
       )}
       {status?.connected && (
@@ -137,20 +137,15 @@ export function BrowserGoogleConnection({
               disabled={busy}
               onChange={(e) => run(() => automaticGoogle(e.target.checked))}
             />
-            Publish and back up automatically while this tab is open
+            Publish and back up while this tab is open
           </label>
         </>
       )}
       <p className="text-xs text-muted-foreground">
-        Google access stays in this tab’s memory. Sign in again after reloading
-        or when access expires. Automatic uploads run approximately once a
-        minute while access is valid; browser background throttling can delay
-        them. Disconnect stops future uploads and leaves Google copies intact.
+        Sign in again after reloading or when access expires. Disconnecting keeps your Google copies.
       </p>
       <p className="text-xs text-muted-foreground">
-        Publishing is one way. Google edits are not imported; conflicting remote
-        edits are left unchanged. This connection does not read your other
-        calendars or merge workspaces.
+        One-way publishing. Google edits aren’t imported; conflicting edits are left unchanged.
       </p>
       {status?.lastSync && (
         <p className="text-xs">

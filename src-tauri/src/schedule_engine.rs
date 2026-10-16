@@ -177,26 +177,34 @@ impl Engine<'_> {
                 .map(|s| instant(s).unwrap())
                 .unwrap_or(self.now),
         );
-        let mut reason = "";
+        let mut reason = String::new();
         if !s.unresolved.is_empty() {
-            reason = "Resolve the questions in this task's scheduling details before planning.";
+            reason =
+                "Resolve the questions in this task's scheduling details before planning.".into();
         }
+        let mut blockers = vec![];
         for dep in &s.dependencies {
-            let p = self
-                .w
-                .tasks
-                .iter()
-                .find(|p| &p.id == dep && p.deleted_at.is_none())
-                .cloned();
+            let p = self.w.tasks.iter().find(|p| &p.id == dep).cloned();
             match p {
-                Some(p) if p.status == "done" || self.visit(&p) => {
-                    earliest = earliest.max(*self.completion.get(dep).unwrap_or(&self.now));
-                }
-                _ => {
-                    reason =
-                        "A prerequisite is missing, unfinished, or part of a dependency cycle.";
+                None => blockers.push(format!("Prerequisite task ({dep}) no longer exists. Remove it in Scheduling details.")),
+                Some(p) if p.deleted_at.is_some() => blockers.push(format!("“{}” is in Trash. Restore it or remove it as a prerequisite.", p.title)),
+                Some(_) if dep == &t.id => blockers.push(format!("“{}” lists itself as a prerequisite. Remove it in Scheduling details.", t.title)),
+                Some(p) if p.status == "done" => {},
+                Some(p) if self.visiting.contains(dep) => blockers.push(format!("Prerequisite loop involving “{}” and “{}”. Remove a dependency to break the loop.", t.title, p.title)),
+                Some(p) => {
+                    if self.visit(&p) {
+                        earliest = earliest.max(*self.completion.get(dep).unwrap_or(&self.now));
+                    } else {
+                        blockers.push(format!("Waiting for “{}”, which could not be fully scheduled. Check its planning warning.", p.title));
+                    }
                 }
             }
+        }
+        if !blockers.is_empty() {
+            if !reason.is_empty() {
+                reason.push(' ');
+            }
+            reason.push_str(&blockers.join(" "));
         }
         let limit = deadline(t, &s);
         let effort = s.remaining_minutes.unwrap_or(t.estimate_minutes);
@@ -244,11 +252,11 @@ impl Engine<'_> {
                     remaining = (remaining - (b - a) / MINUTE).max(0);
                     finish = finish.max(b);
                     if remaining > 0 {
-                        reason="The fixed block covers only part of the remaining effort. Adjust it or remove the fixed time.";
+                        reason="The fixed block covers only part of the remaining effort. Adjust it or remove the fixed time.".into();
                     }
                 }
                 _ => {
-                    reason="The fixed block conflicts with commitments, availability, prerequisites, or remaining effort.";
+                    reason="The fixed block conflicts with commitments, availability, prerequisites, or remaining effort.".into();
                 }
             }
         } else if reason.is_empty() && remaining > 0 {
@@ -301,7 +309,7 @@ impl Engine<'_> {
             }
         }
         if !reason.is_empty() || remaining > 0 {
-            self.unscheduled.push(Unscheduled{title:t.title.clone(),minutes:remaining,reason:if !reason.is_empty(){reason}else if limit<=self.now{"Deadline has passed."}else{"Not enough free time within the deadline, start, and session limits. Try more availability or smaller sessions."}.into()});
+            self.unscheduled.push(Unscheduled{task_id:t.id.clone(),title:t.title.clone(),minutes:remaining,reason:if !reason.is_empty(){reason}else if limit<=self.now{"Deadline has passed.".into()}else{"Not enough free time within the deadline, start, and session limits. Try more availability or smaller sessions.".into()}});
         } else {
             self.completion.insert(t.id.clone(), finish);
         }
@@ -430,7 +438,23 @@ mod tests {
                 .iter()
                 .map(|e| serde_json::json!({"title":e.title,"minutes":e.minutes}))
                 .collect();
-            assert_eq!(serde_json::json!(actual), c["unscheduled"], "{}", c["name"]);
+            let expected: Vec<_> = c["unscheduled"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|e| serde_json::json!({"title": e["title"], "minutes": e["minutes"]}))
+                .collect();
+            assert_eq!(actual, expected, "{}", c["name"]);
+            for warning in c["unscheduled"].as_array().unwrap() {
+                if let Some(reason) = warning["reason"].as_str() {
+                    let actual = p
+                        .unscheduled
+                        .iter()
+                        .find(|e| e.task_id == warning["taskId"].as_str().unwrap())
+                        .unwrap();
+                    assert_eq!(actual.reason, reason, "{}", c["name"]);
+                }
+            }
         }
     }
 }
